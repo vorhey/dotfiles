@@ -12,7 +12,8 @@ export NVM_DIR="$HOME/.nvm"
 
 export PATH="$PATH:/opt/nvim-linux64/bin"
 export PATH=$PATH:/usr/local/go/bin
-export TMUX_TMPDIR='/tmp'
 export EDITOR=nvim
+export PATH="$PATH:/home/$USER/go/bin"
 
 alias tmux="tmux attach -t main || tmux new -s main"
+export TMUX_TMPDIR='/tmp'
