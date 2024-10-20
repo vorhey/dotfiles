@@ -1,4 +1,25 @@
-ls -s ~/.config/nvim nvim
-ln -s ~/dotfiles/.zshrc ~/.zshrc
-ln -s ~/dotfiles/.tmux.conf ~/.tmux.conf
-ln -s ~/dotfiles/.gitmux.conf ~/.gitmux.conf
+#!/bin/bash
+
+# Function to create symlink
+create_symlink() {
+    local source="$1"
+    local target="$2"
+    
+    # Create parent directory if it doesn't exist
+    mkdir -p "$(dirname "$target")"
+    
+    # Remove existing file/symlink if it exists
+    if [ -e "$target" ] || [ -L "$target" ]; then
+        rm -f "$target"
+    fi
+    
+    # Create the symlink
+    ln -s "$source" "$target"
+    echo "Created symlink: $target -> $source"
+}
+
+# Create symlinks
+create_symlink ~/.config/nvim nvim
+create_symlink ~/dotfiles/.zshrc ~/.zshrc
+create_symlink ~/dotfiles/.tmux.conf ~/.tmux.conf
+create_symlink ~/dotfiles/.gitmux.conf ~/.gitmux.conf

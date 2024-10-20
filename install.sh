@@ -82,6 +82,10 @@ install_go() {
         sudo rm -rf /usr/local/go
         sudo tar -C /usr/local -xzf "${FILENAME}"
         rm "${FILENAME}"
+
+	echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc
+	source ~/.zshrc
+
         echo "Go installed successfully."
     else
         echo "Go is already installed."
@@ -105,6 +109,11 @@ install_nvim() {
         curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
         sudo rm -rf /opt/nvim
         sudo tar -C /opt -xzf nvim-linux64.tar.gz
+	
+	# Add Neovim binary path to zsh configuration
+        echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.zshrc
+        source ~/.zshrc
+
         echo "nvim installed"
     else
         echo "nvim is already installed."
@@ -155,14 +164,15 @@ install_gitmux() {
 }
 
 echo "Starting installation of development tools..."
-# install_dev_tools
-# install_rust
-# install_nvm
-# install_go
-# install_node
-# install_nvim
+
+install_dev_tools
+install_rust
+install_nvm
+install_go
+install_node
+install_nvim
 install_tmux
 install_catppuccin
 install_gitmux
-install_tpm
+
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
