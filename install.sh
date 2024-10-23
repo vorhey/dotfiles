@@ -163,6 +163,27 @@ install_gitmux() {
     fi
 }
 
+install_lsbrelease() {
+    OS=$(detect_os)
+    echo "Installing lsb-release for $OS..."
+    case $OS in
+        "Ubuntu"|"Debian GNU/Linux")
+            echo "Installing lsb-release..."
+            sudo apt update
+            sudo apt install -y lsb-release
+            ;;
+        "openSUSE Tumbleweed")
+            echo "Installing lsb-release..."
+            sudo zypper refresh
+            sudo zypper install -y lsb-release
+            ;;
+        *)
+            echo "No specific lsb-release installation defined for $OS."
+            ;;
+    esac
+    echo "lsb-release installation complete."
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -174,5 +195,6 @@ install_nvim
 install_tmux
 install_catppuccin
 install_gitmux
+install_lsbrelease
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
