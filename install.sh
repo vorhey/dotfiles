@@ -184,6 +184,16 @@ install_lsbrelease() {
     echo "lsb-release installation complete."
 }
 
+install_pnpm() {
+    if ! command_exists pnpm; then
+        echo "Installing pnpm..."
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        echo "pnpm installed successfully."
+    else
+        echo "pnpm is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -196,5 +206,6 @@ install_tmux
 install_catppuccin
 install_gitmux
 install_lsbrelease
+install_pnpm
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
