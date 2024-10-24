@@ -17,3 +17,11 @@ export PATH="$PATH:/home/$USER/go/bin"
 
 alias tmux="tmux attach -t main || tmux new -s main"
 export TMUX_TMPDIR='/tmp'
+
+# pnpm
+export PNPM_HOME="/home/jorge/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
