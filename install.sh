@@ -33,6 +33,11 @@ install_dev_tools() {
             sudo zypper refresh
             sudo zypper install -y -t pattern devel_basis devel_C_C++
             ;;
+        "Fedora Linux")
+            echo "Installing development tools..."
+            sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
+            sudo dnf install -y gcc gcc-c++ make
+            ;;
         *)
             echo "No specific development tools installation defined for $OS."
             ;;
@@ -83,8 +88,8 @@ install_go() {
         sudo tar -C /usr/local -xzf "${FILENAME}"
         rm "${FILENAME}"
 
-	echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc
-	source ~/.zshrc
+        echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc
+        source ~/.zshrc
 
         echo "Go installed successfully."
     else
@@ -106,14 +111,19 @@ install_node() {
 install_nvim() {
     if ! command_exists nvim; then
         echo "Installing nvim"
-        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
-        sudo rm -rf /opt/nvim
-        sudo tar -C /opt -xzf nvim-linux64.tar.gz
-	
-	# Add Neovim binary path to zsh configuration
-        echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.zshrc
-        source ~/.zshrc
-
+        OS=$(detect_os)
+        case $OS in
+            "Fedora Linux")
+                sudo dnf install -y neovim python3-neovim
+                ;;
+            *)
+                curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+                sudo rm -rf /opt/nvim
+                sudo tar -C /opt -xzf nvim-linux64.tar.gz
+                echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.zshrc
+                source ~/.zshrc
+                ;;
+        esac
         echo "nvim installed"
     else
         echo "nvim is already installed."
@@ -123,7 +133,18 @@ install_nvim() {
 install_tmux() {
     if ! command_exists tmux; then
         echo "Installing tmux"
-        sudo zypper in tmux
+        OS=$(detect_os)
+        case $OS in
+            "Fedora Linux")
+                sudo dnf install -y tmux
+                ;;
+            "openSUSE Tumbleweed")
+                sudo zypper in tmux
+                ;;
+            "Ubuntu"|"Debian GNU/Linux")
+                sudo apt install -y tmux
+                ;;
+        esac
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
         echo "tmux installed"
     else
@@ -150,6 +171,7 @@ install_tpm() {
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
         echo "TPM Installed"
     else
+        echo "TPM is already installed."
     fi
 }
 
@@ -176,6 +198,10 @@ install_lsbrelease() {
             echo "Installing lsb-release..."
             sudo zypper refresh
             sudo zypper install -y lsb-release
+            ;;
+        "Fedora Linux")
+            echo "Installing redhat-lsb-core..."
+            sudo dnf install -y redhat-lsb-core
             ;;
         *)
             echo "No specific lsb-release installation defined for $OS."
