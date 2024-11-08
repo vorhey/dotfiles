@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -253,4 +253,6 @@ install_catppuccin
 install_gitmux
 install_lsbrelease
 install_pnpm
-install_ripgrep() echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
+install_ripgrep
+
+echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
