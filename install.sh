@@ -23,24 +23,24 @@ install_dev_tools() {
     OS=$(detect_os)
     echo "Installing development tools for $OS..."
     case $OS in
-        "Ubuntu"|"Debian GNU/Linux")
-            echo "Installing build-essential..."
-            sudo apt update
-            sudo apt install -y build-essential
-            ;;
-        "openSUSE Tumbleweed")
-            echo "Installing development patterns..."
-            sudo zypper refresh
-            sudo zypper install -y -t pattern devel_basis devel_C_C++
-            ;;
-        "Fedora Linux")
-            echo "Installing development tools..."
-            sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
-            sudo dnf install -y gcc gcc-c++ make
-            ;;
-        *)
-            echo "No specific development tools installation defined for $OS."
-            ;;
+    "Ubuntu" | "Debian GNU/Linux")
+        echo "Installing build-essential..."
+        sudo apt update
+        sudo apt install -y build-essential
+        ;;
+    "openSUSE Tumbleweed")
+        echo "Installing development patterns..."
+        sudo zypper refresh
+        sudo zypper install -y -t pattern devel_basis devel_C_C++
+        ;;
+    "Fedora Linux")
+        echo "Installing development tools..."
+        sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
+        sudo dnf install -y gcc gcc-c++ make
+        ;;
+    *)
+        echo "No specific development tools installation defined for $OS."
+        ;;
     esac
     echo "Development tools installation complete."
 }
@@ -69,7 +69,7 @@ install_nvm() {
 }
 
 install_go() {
-    if ! command -v go &> /dev/null; then
+    if ! command -v go &>/dev/null; then
         echo "Installing Go..."
         GO_VERSION=$(curl -sL 'https://go.dev/VERSION?m=text' | grep -o 'go[0-9.]*')
         if [ -z "$GO_VERSION" ]; then
@@ -88,7 +88,7 @@ install_go() {
         sudo tar -C /usr/local -xzf "${FILENAME}"
         rm "${FILENAME}"
 
-        echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc
+        echo 'export PATH=$PATH:/usr/local/go/bin' >>~/.zshrc
         source ~/.zshrc
 
         echo "Go installed successfully."
@@ -113,16 +113,16 @@ install_nvim() {
         echo "Installing nvim"
         OS=$(detect_os)
         case $OS in
-            "Fedora Linux")
-                sudo dnf install -y neovim python3-neovim
-                ;;
-            *)
-                curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
-                sudo rm -rf /opt/nvim
-                sudo tar -C /opt -xzf nvim-linux64.tar.gz
-                echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >> ~/.zshrc
-                source ~/.zshrc
-                ;;
+        "Fedora Linux")
+            sudo dnf install -y neovim python3-neovim
+            ;;
+        *)
+            curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+            sudo rm -rf /opt/nvim
+            sudo tar -C /opt -xzf nvim-linux64.tar.gz
+            echo 'export PATH="$PATH:/opt/nvim-linux64/bin"' >>~/.zshrc
+            source ~/.zshrc
+            ;;
         esac
         echo "nvim installed"
     else
@@ -135,15 +135,15 @@ install_tmux() {
         echo "Installing tmux"
         OS=$(detect_os)
         case $OS in
-            "Fedora Linux")
-                sudo dnf install -y tmux
-                ;;
-            "openSUSE Tumbleweed")
-                sudo zypper in tmux
-                ;;
-            "Ubuntu"|"Debian GNU/Linux")
-                sudo apt install -y tmux
-                ;;
+        "Fedora Linux")
+            sudo dnf install -y tmux
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper in tmux
+            ;;
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y tmux
+            ;;
         esac
         git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
         echo "tmux installed"
@@ -157,7 +157,7 @@ install_catppuccin() {
         echo "Installing Catppuccin for tmux..."
         mkdir -p ~/.config/tmux/plugins/catppuccin
         git clone https://github.com/catppuccin/tmux.git ~/.config/tmux/plugins/catppuccin/tmux
-        echo "run ~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux" >> ~/.tmux.conf
+        echo "run ~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux" >>~/.tmux.conf
         echo "Catppuccin installed successfully."
     else
         echo "Catppuccin is already installed."
@@ -189,23 +189,23 @@ install_lsbrelease() {
     OS=$(detect_os)
     echo "Installing lsb-release for $OS..."
     case $OS in
-        "Ubuntu"|"Debian GNU/Linux")
-            echo "Installing lsb-release..."
-            sudo apt update
-            sudo apt install -y lsb-release
-            ;;
-        "openSUSE Tumbleweed")
-            echo "Installing lsb-release..."
-            sudo zypper refresh
-            sudo zypper install -y lsb-release
-            ;;
-        "Fedora Linux")
-            echo "Installing redhat-lsb-core..."
-            sudo dnf install -y redhat-lsb-core
-            ;;
-        *)
-            echo "No specific lsb-release installation defined for $OS."
-            ;;
+    "Ubuntu" | "Debian GNU/Linux")
+        echo "Installing lsb-release..."
+        sudo apt update
+        sudo apt install -y lsb-release
+        ;;
+    "openSUSE Tumbleweed")
+        echo "Installing lsb-release..."
+        sudo zypper refresh
+        sudo zypper install -y lsb-release
+        ;;
+    "Fedora Linux")
+        echo "Installing redhat-lsb-core..."
+        sudo dnf install -y redhat-lsb-core
+        ;;
+    *)
+        echo "No specific lsb-release installation defined for $OS."
+        ;;
     esac
     echo "lsb-release installation complete."
 }
@@ -218,6 +218,26 @@ install_pnpm() {
     else
         echo "pnpm is already installed."
     fi
+}
+
+install_ripgrep() {
+    OS=$(detect_os)
+    echo "Installing ripgrep for $OS..."
+    case $OS in
+    "Ubuntu" | "Debian GNU/Linux")
+        sudo apt install -y ripgrep
+        ;;
+    "openSUSE Tumbleweed")
+        sudo zypper install -y ripgrep
+        ;;
+    "Fedora Linux")
+        sudo dnf install -y ripgrep
+        ;;
+    *)
+        echo "No specific ripgrep installation defined for $OS."
+        ;;
+    esac
+    echo "Development tools installation complete."
 }
 
 echo "Starting installation of development tools..."
@@ -233,5 +253,4 @@ install_catppuccin
 install_gitmux
 install_lsbrelease
 install_pnpm
-
-echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
+install_ripgrep() echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
