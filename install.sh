@@ -240,6 +240,45 @@ install_ripgrep() {
     echo "Development tools installation complete."
 }
 
+install_ruby_dev() {
+    if ! command_exists ruby; then
+        echo "Installing Ruby development tools..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt update
+            sudo apt install -y ruby-full ruby-dev build-essential
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper refresh
+            sudo zypper install -y ruby-devel ruby-dev
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y ruby ruby-devel redhat-rpm-config gcc make
+            ;;
+        *)
+            echo "No specific Ruby development tools installation defined for $OS."
+            ;;
+        esac
+        echo "Ruby development tools installation complete."
+    else
+        echo "Ruby is already installed."
+    fi
+
+    # Install colorls gem
+    if ! command_exists colorls; then
+        echo "Installing colorls gem..."
+        gem install colorls
+        # Add colorls to PATH if needed
+        if [[ ":$PATH:" != *":$HOME/.local/share/gem/ruby/*/bin:"* ]]; then
+            echo 'export PATH="$PATH:$(ruby -e "puts Gem.user_dir")/bin"' >>~/.zshrc
+        fi
+        echo "colorls installed successfully."
+    else
+        echo "colorls is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -254,5 +293,6 @@ install_gitmux
 install_lsbrelease
 install_pnpm
 install_ripgrep
+install_ruby_dev
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
