@@ -27,6 +27,9 @@ get_process_icon() {
     "docker")
         echo " "
         ;;
+    "ssh")
+        echo " 󰷛"
+        ;;
     "lazygit")
         echo " "
         ;;
