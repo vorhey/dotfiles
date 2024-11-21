@@ -247,7 +247,7 @@ install_ruby_dev() {
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
             sudo apt update
-            sudo apt install -y ruby-full ruby-dev build-essential
+            sudo apt install -y ruby ruby-dev ruby-all-dev rubygems-integration
             ;;
         "openSUSE Tumbleweed")
             sudo zypper refresh
@@ -268,7 +268,7 @@ install_ruby_dev() {
     # Install colorls gem
     if ! command_exists colorls; then
         echo "Installing colorls gem..."
-        gem install colorls
+        sudo gem install colorls
         # Add colorls to PATH if needed
         if [[ ":$PATH:" != *":$HOME/.local/share/gem/ruby/*/bin:"* ]]; then
             echo 'export PATH="$PATH:$(ruby -e "puts Gem.user_dir")/bin"' >>~/.zshrc
