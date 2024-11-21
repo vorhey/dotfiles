@@ -14,6 +14,7 @@ export PATH="$HOME/bin:$PATH"
 export PATH="$PATH:/opt/nvim-linux64/bin"
 export PATH=$PATH:/usr/local/go/bin
 export EDITOR=nvim
+export SUDO_EDITOR=nvim
 export PATH="$PATH:/home/$USER/go/bin"
 
 alias tmux="tmux attach -t main || tmux new -s main"
