@@ -30,6 +30,9 @@ get_process_icon() {
     "sh")
         echo " 󰷛"
         ;;
+    "pnpm")
+        echo " "
+        ;;
     "lazygit")
         echo " "
         ;;
