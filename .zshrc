@@ -31,3 +31,4 @@ esac
 # colorls
 source $(dirname $(gem which colorls))/tab_complete.sh
 alias l='colorls -la'
+export PATH="$PATH:$(ruby -e "puts Gem.user_dir")/bin"
