@@ -29,6 +29,10 @@ esac
 # pnpm end
 
 # colorls
-source $(dirname $(gem which colorls))/tab_complete.sh
-alias l='colorls -la'
-export PATH="$PATH:$(ruby -e "puts Gem.user_dir")/bin"
+COLORLS_PATH=$(gem which colorls)
+COLORLS_BIN=$(find /usr/bin -type f -executable -name "colorls.ruby*" | sort -V | tail -n 1)
+if [ -n "$COLORLS_PATH" ] && [ -n "$COLORLS_BIN" ]; then
+  source $(dirname $COLORLS_PATH)/tab_complete.sh
+  alias colorls="$COLORLS_BIN"
+  alias l='colorls -la'
+fi
