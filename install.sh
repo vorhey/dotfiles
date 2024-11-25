@@ -251,6 +251,9 @@ install_ruby_dev() {
     "openSUSE Tumbleweed")
         sudo zypper refresh
         sudo zypper install -y ruby-devel
+        # Configure gem to install executables to /usr/local/bin
+        sudo mkdir -p /usr/local/bin
+        echo 'gem: --bindir /usr/local/bin' | sudo tee /etc/gemrc
         ;;
     "Fedora Linux")
         sudo dnf install -y ruby ruby-devel redhat-rpm-config gcc make

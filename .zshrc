@@ -30,9 +30,7 @@ esac
 
 # colorls
 COLORLS_PATH=$(gem which colorls)
-COLORLS_BIN=$(find /usr/bin -type f -executable -name "colorls.ruby*" | sort -V | tail -n 1)
-if [ -n "$COLORLS_PATH" ] && [ -n "$COLORLS_BIN" ]; then
+if [ -n "$COLORLS_PATH" ]; then
   source $(dirname $COLORLS_PATH)/tab_complete.sh
-  alias colorls="$COLORLS_BIN"
   alias l='colorls -la'
 fi
