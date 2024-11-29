@@ -22,10 +22,6 @@ export SUDO_EDITOR=nvim
 alias tmux="tmux attach -t main || tmux new -s main"
 export TMUX_TMPDIR='/tmp'
 
-# SDKMAN initialization
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
 # pnpm
 export PNPM_HOME="/home/jorge/.local/share/pnpm"
 case ":$PATH:" in

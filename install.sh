@@ -240,35 +240,6 @@ install_ruby_dev() {
     fi
 }
 
-install_sdkman() {
-    if [ ! -d "$HOME/.sdkman" ]; then
-        echo "Installing SDKMAN!..."
-        curl -s "https://get.sdkman.io" | bash
-        source "$HOME/.sdkman/bin/sdkman-init.sh"
-        echo "SDKMAN! installed successfully."
-    else
-        echo "SDKMAN! is already installed."
-    fi
-}
-
-install_java() {
-    if [ ! -d "$HOME/.sdkman" ]; then
-        echo "SDKMAN! is required for Java installation. Installing SDKMAN! first..."
-        install_sdkman
-    fi
-
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
-    if ! command_exists java; then
-        echo "Installing Java 17..."
-        sdk install java 17.0.9-tem
-        sdk default java 17.0.9-tem
-        echo "Java 17 installed successfully."
-    else
-        echo "Java is already installed. Checking version..."
-        java -version
-    fi
-}
-
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -282,7 +253,5 @@ install_lsbrelease
 install_pnpm
 install_ripgrep
 install_ruby_dev
-install_sdkman
-install_java
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
