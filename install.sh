@@ -145,43 +145,9 @@ install_tmux() {
             sudo apt install -y tmux
             ;;
         esac
-        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
         echo "tmux installed"
     else
         echo "tmux is already installed."
-    fi
-}
-
-install_catppuccin() {
-    if [ ! -d "$HOME/.config/tmux/plugins/catppuccin" ]; then
-        echo "Installing Catppuccin for tmux..."
-        mkdir -p ~/.config/tmux/plugins/catppuccin
-        git clone https://github.com/catppuccin/tmux.git ~/.config/tmux/plugins/catppuccin/tmux
-        echo "run ~/.config/tmux/plugins/catppuccin/tmux/catppuccin.tmux" >>~/.tmux.conf
-        echo "Catppuccin installed successfully."
-    else
-        echo "Catppuccin is already installed."
-    fi
-}
-
-install_tpm() {
-    if [ ! -d "$HOME/.tmux/plugins/tpm" ]; then
-        echo "Installing tmux TPM"
-        mkdir -p ~/.tmux/plugins/tpm
-        git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-        echo "TPM Installed"
-    else
-        echo "TPM is already installed."
-    fi
-}
-
-install_gitmux() {
-    if ! command_exists gitmux; then
-        echo "Installing Gitmux..."
-        go install github.com/arl/gitmux@latest
-        echo "Gitmux installed successfully."
-    else
-        echo "Gitmux is already installed."
     fi
 }
 
@@ -274,6 +240,35 @@ install_ruby_dev() {
     fi
 }
 
+install_sdkman() {
+    if [ ! -d "$HOME/.sdkman" ]; then
+        echo "Installing SDKMAN!..."
+        curl -s "https://get.sdkman.io" | bash
+        source "$HOME/.sdkman/bin/sdkman-init.sh"
+        echo "SDKMAN! installed successfully."
+    else
+        echo "SDKMAN! is already installed."
+    fi
+}
+
+install_java() {
+    if [ ! -d "$HOME/.sdkman" ]; then
+        echo "SDKMAN! is required for Java installation. Installing SDKMAN! first..."
+        install_sdkman
+    fi
+
+    source "$HOME/.sdkman/bin/sdkman-init.sh"
+    if ! command_exists java; then
+        echo "Installing Java 17..."
+        sdk install java 17.0.9-tem
+        sdk default java 17.0.9-tem
+        echo "Java 17 installed successfully."
+    else
+        echo "Java is already installed. Checking version..."
+        java -version
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -283,11 +278,11 @@ install_go
 install_node
 install_nvim
 install_tmux
-install_catppuccin
-install_gitmux
 install_lsbrelease
 install_pnpm
 install_ripgrep
 install_ruby_dev
+install_sdkman
+install_java
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
