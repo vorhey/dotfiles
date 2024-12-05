@@ -37,3 +37,5 @@ if [ -n "$COLORLS_PATH" ]; then
   source $(dirname $COLORLS_PATH)/tab_complete.sh
   alias l='colorls -la'
 fi
+
+alias lt='eza --tree --level=2 --long --header --git --icons --group-directories-first --ignore-glob="node_modules|dist|build|target|.git|bin|obj|Debug|Release|.next|.nuxt|.vscode|.idea|coverage|__pycache__|*.pyc"'

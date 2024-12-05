@@ -240,6 +240,34 @@ install_ruby_dev() {
     fi
 }
 
+install_eza() {
+    if ! command_exists eza; then
+        echo "Installing eza..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y eza
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y eza
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y eza
+            ;;
+        *)
+            if command_exists cargo; then
+                cargo install eza
+            else
+                echo "Neither package manager installation nor cargo is available for eza on $OS"
+            fi
+            ;;
+        esac
+        echo "eza installed successfully."
+    else
+        echo "eza is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -253,5 +281,6 @@ install_lsbrelease
 install_pnpm
 install_ripgrep
 install_ruby_dev
+install_eza
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
