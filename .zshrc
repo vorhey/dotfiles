@@ -12,6 +12,7 @@ export NVM_DIR="$HOME/.nvm"
 export PATH="$HOME/bin:$PATH"
 export PATH="$PATH:/opt/nvim-linux64/bin"
 export PATH=$PATH:/usr/local/go/bin
+export PATH="$HOME/.local/bin:$PATH"
 export PATH="$PATH:/home/$USER/go/bin"
 
 # Editor configurations
