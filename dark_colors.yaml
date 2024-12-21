@@ -1,0 +1,46 @@
+# Main Colors
+unrecognized_file: lavender
+recognized_file:   lightsteelblue
+executable_file:   mediumspringgreen
+dir:              mediumslateblue
+
+# Links
+dead_link: palevioletred
+link:      turquoise
+
+# Special Files
+socket:    mediumturquoise
+blockdev:  mediumturquoise
+chardev:   mediumturquoise
+
+# Access Modes
+write:     mediumpurple
+read:      lightseagreen
+exec:      hotpink
+no_access: indianred
+
+# Age
+day_old:     mediumaquamarine
+hour_old:    springgreen
+no_modifier: paleturquoise
+
+# File Size
+file_large:  coral
+file_medium: lightsalmon
+file_small:  peachpuff
+
+# Random
+report: ghostwhite
+user:   lavender
+tree:   mediumturquoise
+empty:  thistle
+error:  deeppink
+normal: lavender
+inode:  plum
+
+# Git
+addition:     lightseagreen
+modification: mediumpurple
+deletion:     palevioletred
+untracked:    coral
+unchanged:    mediumaquamarine

@@ -235,6 +235,7 @@ install_ruby_dev() {
         echo "Installing colorls gem..."
         sudo gem install colorls
         echo "colorls installed successfully."
+        mkdir -p ~/.config/colorls/
     else
         echo "colorls is already installed."
     fi
