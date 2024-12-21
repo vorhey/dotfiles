@@ -22,5 +22,4 @@ create_symlink() {
 create_symlink ~/.config/nvim nvim
 create_symlink ~/dotfiles/.zshrc ~/.zshrc
 create_symlink ~/dotfiles/.tmux.conf ~/.tmux.conf
-create_symlink ~/dotfiles/.gitmux.conf ~/.gitmux.conf
 create_symlink ~/dotfiles/dark_colors.yaml ~/.config/colorls/dark_colors.yaml
