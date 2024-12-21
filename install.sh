@@ -294,7 +294,7 @@ install_lazygit() {
         esac
         echo "Lazygit installed successfully."
     else
-        "Lazygit already installed"
+        echo "Lazygit already installed"
     fi
 }
 
