@@ -1,7 +1,39 @@
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
-plugins=(git)
+plugins=(git fzf)
 source $ZSH/oh-my-zsh.sh
+
+# FZF configuration
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_CTRL_R_OPTS="--preview=''"
+export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+if command -v bat >/dev/null; then
+  export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {}'"
+else
+  export FZF_CTRL_T_OPTS="--preview 'cat {}'"
+fi
+
+# FZF functions
+fcd() {
+  local dir
+  dir=$(fd --type d --hidden --follow --exclude .git | fzf --preview 'eza --tree --level=1 {}') && cd "$dir"
+}
+
+fe() {
+  local file
+  file=$(fzf --preview 'bat --style=numbers --color=always {}') && ${EDITOR:-nvim} "$file"
+}
+
+fkill() {
+  local pid
+  pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
+  if [ "x$pid" != "x" ]; then
+    echo $pid | xargs kill -${1:-9}
+  fi
+}
 
 # NVM configuration
 export NVM_DIR="$HOME/.nvm"

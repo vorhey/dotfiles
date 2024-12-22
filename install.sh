@@ -299,6 +299,77 @@ install_lazygit() {
     fi
 }
 
+install_fzf_fd_bat() {
+    if ! command_exists fzf; then
+        echo "Installing fzf..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y fzf
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y fzf
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y fzf
+            ;;
+        *)
+            echo "No fzf installation found for this distro $OS."
+            ;;
+
+        esac
+        echo "fzf installed successfully."
+    else
+        echo "fzf already installed"
+    fi
+
+    if ! command_exists fd; then
+        echo "Installing fd..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y fd-find
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y fd
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y fd
+            ;;
+        *)
+            echo "No fd installation found for this distro $OS."
+            ;;
+
+        esac
+        echo "fd installed successfully."
+    else
+        echo "fd already installed"
+    fi
+    if ! command_exists bat; then
+        echo "Installing bat..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y bat
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y bat
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y bat
+            ;;
+        *)
+            echo "No bat installation found for this distro $OS."
+            ;;
+
+        esac
+        echo "bat installed successfully."
+    else
+        echo "bat already installed"
+    fi
+    echo "fzf, fd and bat installed successfully."
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -314,5 +385,6 @@ install_ripgrep
 install_ruby_dev
 install_eza
 install_lazygit
+install_fzf
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
