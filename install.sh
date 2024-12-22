@@ -385,6 +385,6 @@ install_ripgrep
 install_ruby_dev
 install_eza
 install_lazygit
-install_fzf
+install_fzf_fd_bat
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
