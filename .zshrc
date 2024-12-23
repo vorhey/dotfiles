@@ -77,3 +77,5 @@ alias ltf='eza --tree --long --header --git --icons --group-directories-first --
 alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(docker container ls -aq)" ] && docker container rm -f $(docker container ls -aq) || true; [ "$(docker volume ls -q)" ] && docker volume rm -f $(docker volume ls -q) || true'
 
 alias lz='lazygit'
+
+alias cls='clear && printf "\033[3J"'
