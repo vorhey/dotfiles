@@ -329,6 +329,8 @@ install_fzf_fd_bat() {
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
             sudo apt install -y fd-find
+            mkdir -p ~/.local/bin
+            ln -sf /usr/bin/fdfind ~/.local/bin/fd
             ;;
         "openSUSE Tumbleweed")
             sudo zypper install -y fd
