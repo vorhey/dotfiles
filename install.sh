@@ -306,8 +306,6 @@ install_fzf_fd_bat() {
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
             sudo apt install -y fzf
-            mkdir -p ~/.local/bin
-            ln -sf /usr/bin/batcat ~/.local/bin/bat
             ;;
         "openSUSE Tumbleweed")
             sudo zypper install -y fzf
@@ -353,6 +351,8 @@ install_fzf_fd_bat() {
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
             sudo apt install -y bat
+            mkdir -p ~/.local/bin
+            ln -sf /usr/bin/batcat ~/.local/bin/bat
             ;;
         "openSUSE Tumbleweed")
             sudo zypper install -y bat
