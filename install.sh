@@ -374,6 +374,16 @@ install_fzf_fd_bat() {
     echo "fzf, fd and bat installed successfully."
 }
 
+install_zsh_autosuggestions() {
+    if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
+        echo "Installing zsh-autosuggestions..."
+        git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+        echo "zsh-autosuggestions installed successfully."
+    else
+        echo "zsh-autosuggestions is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -390,5 +400,6 @@ install_ruby_dev
 install_eza
 install_lazygit
 install_fzf_fd_bat
+install_zsh_autosuggestions
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
