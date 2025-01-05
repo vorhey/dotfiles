@@ -453,7 +453,7 @@ install_bandwhich() {
 }
 
 install_htop() {
-    if ! command_exists btm; then
+    if ! command_exists htop; then
         echo "Installing htop..."
         OS=$(detect_os)
         case $OS in
