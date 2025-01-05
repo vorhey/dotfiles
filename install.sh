@@ -452,27 +452,27 @@ install_bandwhich() {
     fi
 }
 
-install_bottom() {
+install_htop() {
     if ! command_exists btm; then
-        echo "Installing bottom..."
+        echo "Installing htop..."
         OS=$(detect_os)
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y bottom
+            sudo apt install -y htop
             ;;
         "openSUSE Tumbleweed")
-            sudo zypper install -y bottom
+            sudo zypper install -y htop
             ;;
         "Fedora Linux")
-            sudo dnf install -y bottom
+            sudo dnf install -y htop
             ;;
         *)
-            echo "No package manager installation available for bottom on $OS"
+            echo "No package manager installation available for htop on $OS"
             ;;
         esac
-        echo "bottom installed successfully."
+        echo "htop installed successfully."
     else
-        echo "bottom is already installed."
+        echo "htop is already installed."
     fi
 }
 
@@ -494,6 +494,6 @@ install_lazygit
 install_fzf_fd_bat
 install_zsh_autosuggestions
 install_bandwhich
-install_bottom
+install_htop
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
