@@ -79,3 +79,8 @@ alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(d
 alias lz='lazygit'
 
 alias cls='clear && printf "\033[3J"'
+
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
