@@ -384,6 +384,98 @@ install_zsh_autosuggestions() {
     fi
 }
 
+install_bandwhich() {
+    if ! command_exists bandwhich; then
+        echo "Installing bandwhich..."
+        # First ensure libcap-progs is installed for setcap
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y libcap2-bin
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y libcap-progs
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y libcap
+            ;;
+        *)
+            echo "No specific libcap installation defined for $OS."
+            ;;
+        esac
+
+        # Install bandwhich via cargo
+        if command_exists cargo; then
+            cargo install bandwhich
+            # Set capabilities
+            sudo setcap cap_sys_ptrace,cap_dac_read_search,cap_net_raw,cap_net_admin+ep $(command -v bandwhich)
+            echo "bandwhich installed successfully."
+        else
+            echo "cargo not found. Please install Rust first."
+        fi
+    else
+        echo "bandwhich is already installed."
+    fi
+}
+
+install_bandwhich() {
+    if ! command_exists bandwhich; then
+        echo "Installing bandwhich..."
+        # First ensure libcap-progs is installed for setcap
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y libcap2-bin
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y libcap-progs
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y libcap
+            ;;
+        *)
+            echo "No specific libcap installation defined for $OS."
+            ;;
+        esac
+
+        # Install bandwhich via cargo
+        if command_exists cargo; then
+            cargo install bandwhich
+            # Set capabilities
+            sudo setcap cap_sys_ptrace,cap_dac_read_search,cap_net_raw,cap_net_admin+ep $(command -v bandwhich)
+            echo "bandwhich installed successfully."
+        else
+            echo "cargo not found. Please install Rust first."
+        fi
+    else
+        echo "bandwhich is already installed."
+    fi
+}
+
+install_bottom() {
+    if ! command_exists btm; then
+        echo "Installing bottom..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt install -y bottom
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper install -y bottom
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y bottom
+            ;;
+        *)
+            echo "No package manager installation available for bottom on $OS"
+            ;;
+        esac
+        echo "bottom installed successfully."
+    else
+        echo "bottom is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -401,5 +493,7 @@ install_eza
 install_lazygit
 install_fzf_fd_bat
 install_zsh_autosuggestions
+install_bandwhich
+install_bottom
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
