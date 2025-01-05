@@ -452,27 +452,49 @@ install_bandwhich() {
     fi
 }
 
-install_htop() {
-    if ! command_exists htop; then
-        echo "Installing htop..."
+install_bottom() {
+    if ! command_exists btm; then
+        echo "Installing bottom..."
         OS=$(detect_os)
         case $OS in
         "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y htop
+            # Get latest version from GitHub
+            BOTTOM_VERSION=$(curl -s "https://api.github.com/repos/ClementTsang/bottom/releases/latest" | \grep -Po '"tag_name": *"\K[^"]*')
+            if [ -z "$BOTTOM_VERSION" ]; then
+                echo "Failed to get latest bottom version. Exiting installation."
+                return 1
+            fi
+            echo "Installing bottom version ${BOTTOM_VERSION}..."
+            curl -LO "https://github.com/ClementTsang/bottom/releases/download/${BOTTOM_VERSION}/bottom_${BOTTOM_VERSION}-1_amd64.deb"
+            sudo dpkg -i "bottom_${BOTTOM_VERSION}-1_amd64.deb"
+            rm "bottom_${BOTTOM_VERSION}-1_amd64.deb"
             ;;
         "openSUSE Tumbleweed")
-            sudo zypper install -y htop
+            sudo zypper install -y bottom
             ;;
         "Fedora Linux")
-            sudo dnf install -y htop
+            sudo dnf install -y bottom
             ;;
         *)
-            echo "No package manager installation available for htop on $OS"
+            echo "No package manager installation available for bottom on $OS"
             ;;
         esac
-        echo "htop installed successfully."
+
+        # Create bottom config directory and file
+        mkdir -p ~/.config/bottom
+        echo "[flags]
+basic = true
+tree = true" >~/.config/bottom/bottom.toml
+
+        echo "bottom installed and configured with basic tree view."
     else
-        echo "htop is already installed."
+        echo "bottom is already installed."
+        # Add configuration even if bottom was already installed
+        mkdir -p ~/.config/bottom
+        echo "[flags]
+basic = true
+tree = true" >~/.config/bottom/bottom.toml
+        echo "bottom configuration updated with basic tree view."
     fi
 }
 
@@ -494,6 +516,6 @@ install_lazygit
 install_fzf_fd_bat
 install_zsh_autosuggestions
 install_bandwhich
-install_htop
+install_bottom
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
