@@ -464,6 +464,16 @@ tree = true" >~/.config/bottom/bottom.toml
     fi
 }
 
+install_bunjs() {
+    if ! command_exists bun; then
+        echo "Installing bunjs..."
+        curl -fsSL https://bun.sh/install | bash
+        echo "bunjs installed successfully."
+    else
+        echo "bunjs is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -482,5 +492,6 @@ install_lazygit
 install_fzf_fd_bat
 install_zsh_autosuggestions
 install_bottom
+install_bunjs
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
