@@ -467,7 +467,8 @@ tree = true" >~/.config/bottom/bottom.toml
 install_bunjs() {
     if ! command_exists bun; then
         echo "Installing bunjs..."
-        curl -fsSL https://bun.sh/install | bash -y
+        curl -fsSL https://bun.sh/install | bash
+        git restore .zshrc
         echo "bunjs installed successfully."
     else
         echo "bunjs is already installed."
