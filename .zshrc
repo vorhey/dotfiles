@@ -52,7 +52,7 @@ export EDITOR=nvim
 export SUDO_EDITOR=nvim
 
 # Tmux configurations
-alias tmux="tmux attach -t main || tmux new -s main"
+alias tmux="tmux attach -t default || tmux new -s default"
 export TMUX_TMPDIR='/tmp'
 
 # pnpm
