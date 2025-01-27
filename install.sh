@@ -89,7 +89,6 @@ install_go() {
         rm "${FILENAME}"
 
         echo 'export PATH=$PATH:/usr/local/go/bin' >>~/.zshrc
-        source ~/.zshrc
 
         echo "Go installed successfully."
     else
@@ -381,40 +380,6 @@ install_zsh_autosuggestions() {
         echo "zsh-autosuggestions installed successfully."
     else
         echo "zsh-autosuggestions is already installed."
-    fi
-}
-
-install_bandwhich() {
-    if ! command_exists bandwhich; then
-        echo "Installing bandwhich..."
-        # First ensure libcap-progs is installed for setcap
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y libcap2-bin
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y libcap-progs
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y libcap
-            ;;
-        *)
-            echo "No specific libcap installation defined for $OS."
-            ;;
-        esac
-
-        # Install bandwhich via cargo
-        if command_exists cargo; then
-            cargo install bandwhich
-            # Set capabilities
-            sudo setcap cap_sys_ptrace,cap_dac_read_search,cap_net_raw,cap_net_admin+ep $(command -v bandwhich)
-            echo "bandwhich installed successfully."
-        else
-            echo "cargo not found. Please install Rust first."
-        fi
-    else
-        echo "bandwhich is already installed."
     fi
 }
 
