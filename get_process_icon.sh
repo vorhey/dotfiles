@@ -33,6 +33,15 @@ get_process_icon() {
     "pnpm")
         echo " "
         ;;
+    "npm")
+        echo " "
+        ;;
+    "java")
+        echo " "
+        ;;
+    "bun")
+        echo " "
+        ;;
     "lazygit")
         echo " "
         ;;
