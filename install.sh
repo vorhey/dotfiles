@@ -440,6 +440,69 @@ install_bunjs() {
     fi
 }
 
+install_java() {
+    if ! command_exists java; then
+        echo "Installing OpenJDK 21..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt update
+            sudo apt install -y openjdk-21-jdk
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper refresh
+            sudo zypper install -y java-21-openjdk-devel
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y java-21-openjdk-devel
+            ;;
+        *)
+            echo "No specific Java installation defined for $OS."
+            ;;
+        esac
+        echo "OpenJDK 21 installed successfully."
+    else
+        echo "Java is already installed."
+    fi
+}
+
+install_python() {
+    if ! command_exists python3; then
+        echo "Installing Python..."
+        OS=$(detect_os)
+        case $OS in
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt update
+            sudo apt install -y python3 python3-pip python3-venv build-essential libssl-dev libffi-dev python3-dev
+            ;;
+        "openSUSE Tumbleweed")
+            sudo zypper refresh
+            sudo zypper install -y python3 python3-pip python3-devel
+            ;;
+        "Fedora Linux")
+            sudo dnf install -y python3 python3-pip python3-devel
+            ;;
+        *)
+            echo "No specific Python installation defined for $OS."
+            ;;
+        esac
+
+        # Install pipx for managing Python applications in isolated environments
+        if ! command_exists pipx; then
+            echo "Installing pipx..."
+            python3 -m pip install --user pipx
+            python3 -m pipx ensurepath
+        fi
+
+        # Create useful aliases
+        echo 'alias python=python3' >>~/.zshrc
+        echo 'alias pip=pip3' >>~/.zshrc
+
+        echo "Python installed successfully."
+    else
+        echo "Python is already installed."
+    fi
+}
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -459,5 +522,7 @@ install_fzf_fd_bat
 install_zsh_autosuggestions
 install_bottom
 install_bunjs
+install_java
+install_python
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
