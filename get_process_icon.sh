@@ -1,3 +1,4 @@
+#!/bin/bas
 #!/bin/bash
 
 # Add debug logging
@@ -44,6 +45,9 @@ get_process_icon() {
         ;;
     "lazygit")
         echo " "
+        ;;
+    "lazysql")
+        echo " "
         ;;
     *)
         echo "Default case for: $process" >>"$log_file"
