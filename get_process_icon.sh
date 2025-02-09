@@ -1,4 +1,3 @@
-#!/bin/bas
 #!/bin/bash
 
 # Add debug logging
