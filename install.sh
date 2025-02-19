@@ -27,6 +27,7 @@ install_dev_tools() {
         echo "Installing build-essential..."
         sudo apt update
         sudo apt install -y build-essential
+        sudo apt install wget curl git
         ;;
     "openSUSE Tumbleweed")
         echo "Installing development patterns..."
@@ -59,8 +60,9 @@ install_rust() {
 install_nvm() {
     if [ ! -d "$HOME/.nvm" ]; then
         echo "Installing NVM..."
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        mkdir -p "$HOME/.nvm"
         export NVM_DIR="$HOME/.nvm"
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         echo "NVM installed successfully."
     else
@@ -244,7 +246,17 @@ install_eza() {
         echo "Installing eza..."
         OS=$(detect_os)
         case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
+        "Ubuntu")
+            sudo apt install -y eza
+            ;;
+        "Debian GNU/Linux")
+            sudo apt update
+            sudo apt install -y gpg
+            sudo mkdir -p /etc/apt/keyrings
+            wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+            echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+            sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+            sudo apt update
             sudo apt install -y eza
             ;;
         "openSUSE Tumbleweed")
@@ -444,9 +456,15 @@ install_java() {
         echo "Installing OpenJDK 21..."
         OS=$(detect_os)
         case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
+        "Ubuntu")
             sudo apt update
             sudo apt install -y openjdk-21-jdk
+            ;;
+        "Debian GNU/Linux")
+            sudo apt update
+            curl -LO https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb
+            sudo dpkg -i jdk-21_linux-x64_bin.deb
+            rm jdk-21_linux-x64_bin.deb
             ;;
         "openSUSE Tumbleweed")
             sudo zypper refresh
