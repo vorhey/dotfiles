@@ -144,6 +144,9 @@ install_tmux() {
         "Ubuntu" | "Debian GNU/Linux")
             sudo apt install -y tmux
             ;;
+        "Arch Linux")
+            sudo pacman -S --noconfirm tmux
+            ;;
         esac
         echo "tmux installed"
     else
@@ -168,6 +171,10 @@ install_lsbrelease() {
     "Fedora Linux")
         echo "Installing redhat-lsb-core..."
         sudo dnf install -y redhat-lsb-core
+        ;;
+    "Arch Linux")
+        echo "Installing redhat-lsb-core..."
+        sudo pacman -S --noconfirm lsb-release
         ;;
     *)
         echo "No specific lsb-release installation defined for $OS."
@@ -199,6 +206,9 @@ install_ripgrep() {
     "Fedora Linux")
         sudo dnf install -y ripgrep
         ;;
+    "Arch Linux")
+        sudo pacman -S --noconfirm ripgrep
+        ;;
     *)
         echo "No specific ripgrep installation defined for $OS."
         ;;
@@ -223,6 +233,9 @@ install_ruby_dev() {
         ;;
     "Fedora Linux")
         sudo dnf install -y ruby ruby-devel redhat-rpm-config gcc make
+        ;;
+    "Arch Linux")
+        sudo pacman -S --noconfirm ruby
         ;;
     *)
         echo "No specific Ruby development tools installation defined for $OS."
@@ -298,6 +311,9 @@ install_lazygit() {
             sudo dnf copr enable atim/lazygit -y
             sudo dnf install lazygit
             ;;
+        "Arch Linux")
+            sudo pacman -S --noconfirm lazygit
+            ;;
         *)
             echo "No lazygit installation found for this distro $OS."
             ;;
@@ -322,6 +338,9 @@ install_fzf_fd_bat() {
             ;;
         "Fedora Linux")
             sudo dnf install -y fzf
+            ;;
+        "Arch Linux")
+            sudo pacman -S --noconfirm fzf
             ;;
         *)
             echo "No fzf installation found for this distro $OS."
@@ -348,6 +367,9 @@ install_fzf_fd_bat() {
         "Fedora Linux")
             sudo dnf install -y fd
             ;;
+        "Arch Linux")
+            sudo pacman -S --noconfirm fd
+            ;;
         *)
             echo "No fd installation found for this distro $OS."
             ;;
@@ -371,6 +393,9 @@ install_fzf_fd_bat() {
             ;;
         "Fedora Linux")
             sudo dnf install -y bat
+            ;;
+        "Arch Linux")
+            sudo pacman -S --noconfirm bat
             ;;
         *)
             echo "No bat installation found for this distro $OS."
@@ -473,6 +498,9 @@ install_java() {
         "Fedora Linux")
             sudo dnf install -y java-21-openjdk-devel
             ;;
+        "Arch Linux")
+            sudo pacman -S jdk21-openjdk
+            ;;
         *)
             echo "No specific Java installation defined for $OS."
             ;;
@@ -498,6 +526,9 @@ install_python() {
             ;;
         "Fedora Linux")
             sudo dnf install -y python3 python3-pip python3-devel
+            ;;
+        "Arch Linux")
+            sudo pacman -S python
             ;;
         *)
             echo "No specific Python installation defined for $OS."
