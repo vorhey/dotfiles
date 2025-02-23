@@ -552,6 +552,16 @@ install_python() {
         echo "Python is already installed."
     fi
 }
+
+install_powerlevel10k() {
+    if ! command_exists p10k; then
+        echo "Installing powerlevel10k..."
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+    else
+        echo "powerlevel10k is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
