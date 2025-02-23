@@ -440,6 +440,7 @@ install_bottom() {
             sudo zypper install -y bottom
             ;;
         "Fedora Linux")
+            sudo dnf copr enable atim/bottom -y
             sudo dnf install -y bottom
             ;;
         *)
