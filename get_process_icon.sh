@@ -48,6 +48,9 @@ get_process_icon() {
     "lazysql")
         echo " "
         ;;
+    "spf")
+        echo " 󰙅"
+        ;;
     *)
         echo "Default case for: $process" >>"$log_file"
         echo " " # default icon
