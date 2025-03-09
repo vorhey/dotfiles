@@ -24,6 +24,9 @@ get_process_icon() {
     "python")
         echo " "
         ;;
+    "python3")
+        echo " "
+        ;;
     "docker")
         echo " "
         ;;
