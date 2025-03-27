@@ -54,6 +54,9 @@ get_process_icon() {
     "spf")
         echo " 󰙅"
         ;;
+    "sam")
+        echo ""
+        ;;
     *)
         echo "Default case for: $process" >>"$log_file"
         echo " " # default icon
