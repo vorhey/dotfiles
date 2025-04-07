@@ -4,6 +4,7 @@ case "$(cat /etc/os-release | grep '^ID=' | cut -d'=' -f2 | tr -d '"')" in
 "debian") echo "#[fg=red]" ;;
 "fedora") echo "#[fg=blue]" ;;
 "arch") echo "#[fg=blue]󰣇" ;;
+"cachyos") echo "#[fg=blue]󰣇" ;;
 "opensuse-tumbleweed") echo "#[fg=green]" ;;
 *) echo "" ;;
 esac
