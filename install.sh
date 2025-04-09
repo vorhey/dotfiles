@@ -583,6 +583,6 @@ install_bottom
 install_bunjs
 install_java
 install_python
-install_powerlevel10k
+#install_powerlevel10k
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."

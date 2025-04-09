@@ -1,5 +1,5 @@
 export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="powerlevel10k/powerlevel10k"
+ZSH_THEME="light-colors"
 plugins=(git fzf zsh-autosuggestions)
 source $ZSH/oh-my-zsh.sh
 
@@ -92,6 +92,3 @@ export XDG_CACHE_HOME="$HOME/.cache"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
