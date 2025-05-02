@@ -553,6 +553,17 @@ install_python() {
     fi
 }
 
+install_zoxide() {
+    if ! command_exists zoxide; then
+        echo "Installing zoxide..."
+        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+        git restore .zshrc
+        echo "zoxide installed successfully."
+    else
+        echo "zoxide is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -574,5 +585,6 @@ install_bottom
 install_bunjs
 install_java
 install_python
+install_zoxide
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
