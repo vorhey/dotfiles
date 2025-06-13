@@ -5,6 +5,10 @@ find_project_info() {
 
     local current_dir="$1"
 
+    if [[ "$current_dir" == "$HOME" ]]; then
+        return 0
+    fi
+
     # Ensure we have an absolute path
     if [[ ! "$current_dir" = /* ]]; then
         current_dir="$(cd "$current_dir" 2>/dev/null && pwd)"
