@@ -47,6 +47,8 @@ find_project_info() {
         "Makefile"         # Various
         ".project"         # Eclipse
         ".vscode"          # VS Code workspace
+        "pubspec.yaml"     # Flutter/Dart
+        "pubspec.yml"      # Flutter/Dart (alternative spelling)
     )
 
     # Start from current directory and go up
