@@ -1,0 +1,3 @@
+# ~/.zsh_history_ignore
+export HISTORY_IGNORE="(claude)"
+export ZSH_AUTOSUGGEST_HISTORY_IGNORE="(claude)"

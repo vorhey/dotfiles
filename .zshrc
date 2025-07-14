@@ -93,3 +93,6 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 eval "$(zoxide init zsh)"
+
+# ignore
+source ~/dotfiles/.zsh_history_ignore
