@@ -25,7 +25,7 @@ find_project_info() {
 
     if [[ -n "$git_root" ]]; then
         # We're in a git repo, return the git repo name
-        echo "󰊢 $(basename "$git_root")"
+        echo " $(basename "$git_root")"
         return 0
     fi
 
