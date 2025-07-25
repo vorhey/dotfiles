@@ -54,6 +54,9 @@ get_process_icon() {
     "spf")
         echo " 󰙅"
         ;;
+    "toney")
+        echo " "
+        ;;
     "sam")
         echo ""
         ;;
