@@ -60,6 +60,9 @@ get_process_icon() {
     "sam")
         echo ""
         ;;
+    "claude")
+        echo " 󰛄"
+        ;;
     *)
         echo "Default case for: $process" >>"$log_file"
         echo " " # default icon
