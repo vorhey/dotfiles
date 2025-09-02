@@ -477,40 +477,6 @@ install_bunjs() {
     fi
 }
 
-install_java() {
-    if ! command_exists java; then
-        echo "Installing OpenJDK 21..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu")
-            sudo apt update
-            sudo apt install -y openjdk-21-jdk
-            ;;
-        "Debian GNU/Linux")
-            sudo apt update
-            curl -LO https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.deb
-            sudo dpkg -i jdk-21_linux-x64_bin.deb
-            rm jdk-21_linux-x64_bin.deb
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper refresh
-            sudo zypper install -y java-21-openjdk-devel
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y java-21-openjdk-devel
-            ;;
-        "Arch Linux")
-            sudo pacman -S jdk21-openjdk
-            ;;
-        *)
-            echo "No specific Java installation defined for $OS."
-            ;;
-        esac
-        echo "OpenJDK 21 installed successfully."
-    else
-        echo "Java is already installed."
-    fi
-}
 
 install_python() {
     if ! command_exists python3; then
@@ -564,6 +530,20 @@ install_zoxide() {
     fi
 }
 
+install_sdkman() {
+    if [ ! -d "$HOME/.sdkman" ]; then
+        echo "Installing SDKMAN..."
+        curl -s "https://get.sdkman.io" | bash
+        export SDKMAN_DIR="$HOME/.sdkman"
+        if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
+            . "$SDKMAN_DIR/bin/sdkman-init.sh"
+        fi
+        echo "SDKMAN installed successfully."
+    else
+        echo "SDKMAN is already installed."
+    fi
+}
+
 echo "Starting installation of development tools..."
 
 install_dev_tools
@@ -583,7 +563,7 @@ install_fzf_fd_bat
 install_zsh_autosuggestions
 install_bottom
 install_bunjs
-install_java
+install_sdkman
 install_python
 install_zoxide
 

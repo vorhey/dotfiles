@@ -94,5 +94,6 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 eval "$(zoxide init zsh)"
 
-# ignore
+# source
 source ~/dotfiles/.zsh_history_ignore
+source ~/.sdkman/bin/sdkman-init.sh
