@@ -60,6 +60,15 @@ get_process_icon() {
     "sam")
         echo ""
         ;;
+    "gemini")
+        echo " "
+        ;;
+    "codex")
+        echo " "
+        ;;
+    "qwen")
+        echo " 󰘯"
+        ;;
     "claude")
         echo " 󰛄"
         ;;

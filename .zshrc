@@ -100,51 +100,19 @@ source ~/.sdkman/bin/sdkman-init.sh
 
 # cli rename
 _tmux_with_prefix_title() {
-  # usage: _tmux_with_prefix_title <prefix> <command> [args...]
   local prefix="$1"
   shift
 
   if [ -n "$TMUX" ]; then
-    local win_id prev_auto prev_fmt
-    win_id="$(tmux display-message -p '#{window_id}')"
-
-    # Read current settings (empty if not set per-window)
-    prev_auto="$(tmux show -w -v -t "$win_id" automatic-rename 2>/dev/null || echo "")"
-    prev_fmt="$(tmux show -w -v -t "$win_id" automatic-rename-format 2>/dev/null || echo "")"
-
-    # Keep auto-rename ON and inject a prefixed format that still tracks the process
-    tmux set-window-option -q -t "$win_id" automatic-rename on
-    tmux set-window-option -q -t "$win_id" automatic-rename-format "${prefix}"
-
-    _tmux_restore_prefix() {
-      # Restore prior format
-      if [ -n "$prev_fmt" ]; then
-        tmux set-window-option -q -t "$win_id" automatic-rename-format "$prev_fmt"
-      else
-        # Unset to inherit default
-        tmux set-window-option -q -u -t "$win_id" automatic-rename-format
-      fi
-      # Restore previous automatic-rename state if it was explicitly set
-      if [ -n "$prev_auto" ]; then
-        tmux set-window-option -q -t "$win_id" automatic-rename "$prev_auto"
-      fi
-      tmux refresh-client -S >/dev/null 2>&1
-    }
-    trap _tmux_restore_prefix EXIT
+    local node_path=$(command -v node)
+    local cmd_path=$(command which "$prefix" 2>/dev/null | head -1)
+    exec -a "$prefix" "$node_path" "$cmd_path" "$@"
+  else
+    command "$prefix" "$@"
   fi
-
-  command "$@"
-  local s=$?
-
-  if [ -n "$TMUX" ]; then
-    trap - EXIT
-    _tmux_restore_prefix
-  fi
-
-  return $s
 }
 
-# wrappers
-codex() { _tmux_with_prefix_title codex codex "$@"; }
-gemini() { _tmux_with_prefix_title gemini gemini "$@"; }
-qwen() { _tmux_with_prefix_title qwen qwen "$@"; }
+# Simpler wrappers - using the same name for both prefix and command
+codex() { _tmux_with_prefix_title codex "$@"; }
+gemini() { _tmux_with_prefix_title gemini "$@"; }
+qwen() { _tmux_with_prefix_title qwen "$@"; }
