@@ -97,3 +97,23 @@ eval "$(zoxide init zsh)"
 # source
 source ~/dotfiles/.zsh_history_ignore
 source ~/.sdkman/bin/sdkman-init.sh
+
+# cli rename
+codex() {
+  if [ -n "$TMUX" ]; then
+    command tmux rename-window codex >/dev/null 2>&1
+  fi
+  command codex "$@"
+}
+gemini() {
+  if [ -n "$TMUX" ]; then
+    command tmux rename-window gemini >/dev/null 2>&1
+  fi
+  command gemini "$@"
+}
+qwen() {
+  if [ -n "$TMUX" ]; then
+    command tmux rename-window qwen >/dev/null 2>&1
+  fi
+  command qwen "$@"
+}
