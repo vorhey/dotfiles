@@ -106,7 +106,7 @@ _tmux_with_prefix_title() {
   if [ -n "$TMUX" ]; then
     local node_path=$(command -v node)
     local cmd_path=$(command which "$prefix" 2>/dev/null | head -1)
-    exec -a "$prefix" "$node_path" "$cmd_path" "$@"
+    (exec -a "$prefix" "$node_path" "$cmd_path" "$@")
   else
     command "$prefix" "$@"
   fi
