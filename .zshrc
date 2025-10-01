@@ -116,3 +116,4 @@ _tmux_with_prefix_title() {
 codex() { _tmux_with_prefix_title codex "$@"; }
 gemini() { _tmux_with_prefix_title gemini "$@"; }
 qwen() { _tmux_with_prefix_title qwen "$@"; }
+copilot() { _tmux_with_prefix_title copilot "$@"; }
