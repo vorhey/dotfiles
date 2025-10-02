@@ -117,3 +117,59 @@ codex() { _tmux_with_prefix_title codex "$@"; }
 gemini() { _tmux_with_prefix_title gemini "$@"; }
 qwen() { _tmux_with_prefix_title qwen "$@"; }
 copilot() { _tmux_with_prefix_title copilot "$@"; }
+
+# --- Warp tab title (no tmux) -------------------------------------------------
+# Send OSC title: ESC ] 0 ; <title> BEL
+_warp_set_title() {
+  local t="${1//$'\n'/ }"
+  printf '\033]0;%s\007' "$t"
+}
+
+# Optional helpers reusing your scripts
+_icon_for() {
+  # map a command to an icon via your existing script
+  "$HOME/dotfiles/get_process_icon.sh" "$1" 2>/dev/null || echo ""
+}
+
+_project_root_name() {
+  local root="$("$HOME/dotfiles/get_project_root.sh" "$PWD" 2>/dev/null)"
+  [[ -n "$root" ]] && basename "$root" || basename "$PWD"
+}
+
+_git_branch() {
+  command git branch --show-current 2>/dev/null
+}
+
+# Idle title (shown at prompt)
+_pretty_idle_title() {
+  local base proj branch
+  base="${PWD##*/}"
+  proj="$(_project_root_name)"
+  branch="$(_git_branch)"
+  [[ -n "$branch" ]] && branch=" · ${branch}"
+  echo "${base} · ${proj}${branch}"
+}
+
+# Busy title (before running a command)
+_pretty_busy_title() {
+  local proj="$(_project_root_name)"
+  local cmd="${1%% *}" # first token of the command line
+  local icon="$(_icon_for "$cmd")"
+  if [[ -n "$icon" ]]; then
+    echo "${icon}  $1 · ${proj}"
+  else
+    echo "$1 · ${proj}"
+  fi
+}
+
+# Hook into zsh lifecycle
+_preexec_title() { _warp_set_title "$(_pretty_busy_title "$1")"; }
+_precmd_title() { _warp_set_title "$(_pretty_idle_title)"; }
+
+# Register hooks (compatible with other plugins)
+precmd_functions+=(_precmd_title)
+preexec_functions+=(_preexec_title)
+
+# If oh-my-zsh tries to manage titles, ensure we’re in charge
+export DISABLE_AUTO_TITLE="true"
+# ------------------------------------------------------------------------------
