@@ -75,6 +75,9 @@ get_process_icon() {
     "claude")
         echo " 󰛄"
         ;;
+    "copilot")
+        echo " "
+        ;;
     *)
         echo "Default case for: $process" >>"$log_file"
         echo " " # default icon
