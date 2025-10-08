@@ -1,6 +1,8 @@
 export ZSH="$HOME/.oh-my-zsh"
+# ZSH AI
+export ZSH_AI_PROVIDER="gemini"
 ZSH_THEME="light-colors"
-plugins=(git fzf zsh-autosuggestions)
+plugins=(git fzf zsh-autosuggestions zsh-ai)
 source $ZSH/oh-my-zsh.sh
 
 # FZF configuration
