@@ -419,6 +419,16 @@ install_zsh_autosuggestions() {
     fi
 }
 
+install_zsh_ai() {
+    if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-ai" ]; then
+        echo "Installing zsh-ai..."
+        git clone https://github.com/matheusml/zsh-ai ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-ai
+        echo "zsh-ai installed successfully."
+    else
+        echo "zsh-ai is already installed."
+    fi
+}
+
 install_bottom() {
     if ! command_exists btm; then
         echo "Installing bottom..."
@@ -561,6 +571,7 @@ install_eza
 install_lazygit
 install_fzf_fd_bat
 install_zsh_autosuggestions
+install_zsh_ai
 install_bottom
 install_bunjs
 install_sdkman
