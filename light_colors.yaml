@@ -1,0 +1,46 @@
+# Main Colors - darker colors for light theme
+unrecognized_file: dimgray
+recognized_file:   darkslategray
+executable_file:   darkgreen
+dir:              darkblue
+
+# Links
+dead_link: darkred
+link:      darkcyan
+
+# Special Files
+socket:    darkcyan
+blockdev:  darkcyan
+chardev:   darkcyan
+
+# Access Modes
+write:     darkviolet
+read:      darkolivegreen
+exec:      crimson
+no_access: darkred
+
+# Age
+day_old:     seagreen
+hour_old:    forestgreen
+no_modifier: teal
+
+# File Size
+file_large:  orangered
+file_medium: darkorange
+file_small:  chocolate
+
+# Random
+report: black
+user:   dimgray
+tree:   darkcyan
+empty:  gray
+error:  red
+normal: darkslategray
+inode:  darkgray
+
+# Git
+addition:     darkgreen
+modification: darkviolet
+deletion:     darkred
+untracked:    darkorange
+unchanged:    seagreen
