@@ -106,9 +106,15 @@ _tmux_with_prefix_title() {
   shift
 
   if [ -n "$TMUX" ]; then
-    local node_path=$(command -v node)
-    local cmd_path=$(command which "$prefix" 2>/dev/null | head -1)
-    (exec -a "$prefix" "$node_path" "$cmd_path" "$@")
+    local cmd_path=$(whence -p "$prefix" 2>/dev/null)
+    [ -z "$cmd_path" ] && return 1
+    [[ "$cmd_path" == "$0" ]] && return 2
+    if head -1 "$cmd_path" 2>/dev/null | grep -qE '^#!.*node'; then
+      local node_path=$(command -v node)
+      (exec -a "$prefix" "$node_path" "$cmd_path" "$@")
+    else
+      (exec -a "$prefix" "$cmd_path" "$@")
+    fi
   else
     command "$prefix" "$@"
   fi
