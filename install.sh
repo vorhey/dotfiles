@@ -24,20 +24,20 @@ install_dev_tools() {
     echo "Installing development tools for $OS..."
     case $OS in
     "Ubuntu" | "Debian GNU/Linux")
-        echo "Installing build-essential..."
+        echo "Installing build-essential and unzip..."
         sudo apt update
-        sudo apt install -y build-essential
+        sudo apt install -y build-essential unzip
         sudo apt install wget curl git
         ;;
     "openSUSE Tumbleweed")
-        echo "Installing development patterns..."
+        echo "Installing development patterns and unzip..."
         sudo zypper refresh
-        sudo zypper install -y -t pattern devel_basis devel_C_C++
+        sudo zypper install -y -t pattern devel_basis devel_C_C++ unzip
         ;;
     "Fedora Linux")
-        echo "Installing development tools..."
+        echo "Installing development tools and unzip..."
         sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
-        sudo dnf install -y gcc gcc-c++ make
+        sudo dnf install -y gcc gcc-c++ make unzip
         ;;
     *)
         echo "No specific development tools installation defined for $OS."
@@ -62,7 +62,7 @@ install_nvm() {
         echo "Installing NVM..."
         mkdir -p "$HOME/.nvm"
         export NVM_DIR="$HOME/.nvm"
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         echo "NVM installed successfully."
     else
@@ -486,7 +486,6 @@ install_bunjs() {
         echo "bunjs is already installed."
     fi
 }
-
 
 install_python() {
     if ! command_exists python3; then
