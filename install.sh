@@ -32,7 +32,8 @@ install_dev_tools() {
     "openSUSE Tumbleweed")
         echo "Installing development patterns and unzip..."
         sudo zypper refresh
-        sudo zypper install -y -t pattern devel_basis devel_C_C++ unzip
+	sudo zypper install -y unzip
+        sudo zypper install -y -t pattern devel_basis devel_C_C++
         ;;
     "Fedora Linux")
         echo "Installing development tools and unzip..."
