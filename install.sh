@@ -217,44 +217,6 @@ install_ripgrep() {
     echo "Development tools installation complete."
 }
 
-install_ruby_dev() {
-    echo "Installing Ruby development tools..."
-    OS=$(detect_os)
-    case $OS in
-    "Ubuntu" | "Debian GNU/Linux")
-        sudo apt update
-        sudo apt install -y ruby ruby-dev ruby-all-dev rubygems-integration
-        ;;
-    "openSUSE Tumbleweed")
-        sudo zypper refresh
-        sudo zypper install -y ruby-devel
-        # Configure gem to install executables to /usr/local/bin
-        sudo mkdir -p /usr/local/bin
-        echo 'gem: --bindir /usr/local/bin' | sudo tee /etc/gemrc
-        ;;
-    "Fedora Linux")
-        sudo dnf install -y ruby ruby-devel redhat-rpm-config gcc make
-        ;;
-    "Arch Linux")
-        sudo pacman -S --noconfirm ruby
-        ;;
-    *)
-        echo "No specific Ruby development tools installation defined for $OS."
-        ;;
-    esac
-    echo "Ruby development tools installation complete."
-
-    # Install colorls gem
-    if ! command_exists colorls; then
-        echo "Installing colorls gem..."
-        sudo gem install colorls
-        echo "colorls installed successfully."
-        mkdir -p ~/.config/colorls/
-    else
-        echo "colorls is already installed."
-    fi
-}
-
 install_eza() {
     if ! command_exists eza; then
         echo "Installing eza..."
@@ -566,7 +528,6 @@ install_tmux
 install_lsbrelease
 install_pnpm
 install_ripgrep
-install_ruby_dev
 install_eza
 install_lazygit
 install_fzf_fd_bat
