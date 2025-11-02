@@ -131,25 +131,62 @@ install_nvim() {
     fi
 }
 
+build_tmux_from_source() {
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    if [ ! -d "$tmp_dir" ]; then
+        echo "Failed to create temporary directory for tmux build."
+        return 1
+    fi
+
+    if ! git clone https://github.com/tmux/tmux.git "$tmp_dir/tmux"; then
+        echo "Failed to clone tmux repository."
+        rm -rf "$tmp_dir"
+        return 1
+    fi
+
+    (
+        cd "$tmp_dir/tmux" || exit 1
+        sh autogen.sh
+        ./configure --enable-sixel
+        make -j"$(nproc)"
+        sudo make install
+    )
+    local build_status=$?
+    rm -rf "$tmp_dir"
+    return $build_status
+}
+
 install_tmux() {
     if ! command_exists tmux; then
         echo "Installing tmux"
         OS=$(detect_os)
         case $OS in
-        "Fedora Linux")
-            sudo dnf install -y tmux
+        "Ubuntu" | "Debian GNU/Linux")
+            sudo apt update
+            sudo apt install -y git build-essential autoconf automake pkg-config libevent-dev libncurses-dev libutempter-dev libgd-dev
             ;;
         "openSUSE Tumbleweed")
-            sudo zypper in tmux
+            sudo zypper refresh
+            sudo zypper install -y git gcc make autoconf automake pkg-config libevent-devel ncurses-devel libutempter-devel libgd-devel
             ;;
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y tmux
+        "Fedora Linux")
+            sudo dnf install -y git gcc make autoconf automake pkgconfig libevent-devel ncurses-devel libutempter-devel libgd-devel
             ;;
         "Arch Linux")
-            sudo pacman -S --noconfirm tmux
+            sudo pacman -S --noconfirm git base-devel ncurses libevent libutempter pkgconf libgd
+            ;;
+        *)
+            echo "No tmux source installation defined for $OS."
+            return 0
             ;;
         esac
-        echo "tmux installed"
+        if build_tmux_from_source; then
+            echo "tmux installed from source with sixel support."
+        else
+            echo "tmux installation from source failed."
+            return 1
+        fi
     else
         echo "tmux is already installed."
     fi
