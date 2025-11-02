@@ -24,21 +24,21 @@ install_dev_tools() {
     echo "Installing development tools for $OS..."
     case $OS in
     "Ubuntu" | "Debian GNU/Linux")
-        echo "Installing build-essential and unzip..."
+        echo "Installing basics..."
         sudo apt update
         sudo apt install -y build-essential unzip
-        sudo apt install wget curl git
+        sudo apt install wget curl git jq
         ;;
     "openSUSE Tumbleweed")
-        echo "Installing development patterns and unzip..."
+        echo "Installing basics..."
         sudo zypper refresh
-	sudo zypper install -y unzip
+        sudo zypper install -y unzip jq
         sudo zypper install -y -t pattern devel_basis devel_C_C++
         ;;
     "Fedora Linux")
-        echo "Installing development tools and unzip..."
+        echo "Installing basics..."
         sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
-        sudo dnf install -y gcc gcc-c++ make unzip
+        sudo dnf install -y gcc gcc-c++ make unzip jq
         ;;
     *)
         echo "No specific development tools installation defined for $OS."
