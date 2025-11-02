@@ -1,46 +1,46 @@
-# Main Colors - darker colors for light theme
-unrecognized_file: dimgray
-recognized_file:   darkslategray
-executable_file:   darkgreen
-dir:              darkblue
+# Main Colors - refreshed pastel palette with higher contrast
+unrecognized_file: "#D76A7A"
+recognized_file:   "#4F8BC9"
+executable_file:   "#4DAF97"
+dir:               "#706282"
 
 # Links
-dead_link: darkred
-link:      darkcyan
+dead_link: "#D85B63"
+link:      "#993663"
 
 # Special Files
-socket:    darkcyan
-blockdev:  darkcyan
-chardev:   darkcyan
+socket:    "#4FBBA9"
+blockdev:  "#6D97C9"
+chardev:   "#A485D6"
 
 # Access Modes
-write:     darkviolet
-read:      darkolivegreen
-exec:      crimson
-no_access: darkred
+write:     "#B08AE6"
+read:      "#52B47F"
+exec:      "#DE6A8A"
+no_access: "#B9725F"
 
 # Age
-day_old:     seagreen
-hour_old:    forestgreen
-no_modifier: teal
+day_old:     "#5159C9"
+hour_old:    "#298C51"
+no_modifier: "#9C7597"
 
 # File Size
-file_large:  orangered
-file_medium: darkorange
-file_small:  chocolate
+file_large:  "#DD7A42"
+file_medium: "#E39B4F"
+file_small:  "#EBC350"
 
 # Random
-report: black
-user:   dimgray
-tree:   darkcyan
-empty:  gray
-error:  red
-normal: darkslategray
-inode:  darkgray
+report: "#617090"
+user:   "#9074D6"
+tree:   "#4F8ECF"
+empty:  "#B7C1CF"
+error:  "#D2555D"
+normal: "#5E6E8E"
+inode:  "#A57FD8"
 
 # Git
-addition:     darkgreen
-modification: darkviolet
-deletion:     darkred
-untracked:    darkorange
-unchanged:    seagreen
+addition:     "#55B68A"
+modification: "#A386E2"
+deletion:     "#D65C6C"
+untracked:    "#E0A45B"
+unchanged:    "#61BEA1"
