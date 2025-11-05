@@ -1,24 +1,50 @@
+# =============================================================================
+# ZSH CONFIGURATION
+# =============================================================================
+
+# Path to Oh My Zsh installation
 export ZSH="$HOME/.oh-my-zsh"
-# ZSH AI
+
+# ZSH AI plugin configuration
 export ZSH_AI_PROVIDER="gemini"
+
+# Theme and plugins
 ZSH_THEME="light-colors"
 plugins=(git fzf zsh-autosuggestions zsh-ai)
+
+# Initialize Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
-# FZF configuration
+# =============================================================================
+# FZF CONFIGURATION
+# =============================================================================
+
+# Load fzf key bindings and fuzzy completion
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+# FZF default options
 export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
+
+# FZF default command for file searching
 export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+
+# FZF command for Ctrl+T (files)
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+# FZF command for Ctrl+R (history)
 export FZF_CTRL_R_OPTS="--preview=''"
+
+# FZF command for Alt+C (directories)
 export FZF_ALT_C_COMMAND="fd --type d --hidden --follow --exclude .git"
+
+# FZF preview options for file selection
 if command -v bat >/dev/null; then
   export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {}'"
 else
   export FZF_CTRL_T_OPTS="--preview 'cat {}'"
 fi
 
-# FZF functions
+# FZF utility functions
 fcd() {
   local dir
   dir=$(fd --type d --hidden --follow --exclude .git | fzf --preview 'eza --tree --level=1 {}') && cd "$dir"
@@ -37,12 +63,19 @@ fkill() {
   fi
 }
 
-# NVM configuration
+# =============================================================================
+# NODE VERSION MANAGER (NVM)
+# =============================================================================
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
-# Path configurations
+# =============================================================================
+# PATH CONFIGURATION
+# =============================================================================
+
+# Add custom paths to PATH
 export PATH="$HOME/bin:$PATH"
 export PATH="$PATH:/opt/nvim-linux64/bin"
 export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
@@ -50,52 +83,86 @@ export PATH=$PATH:/usr/local/go/bin
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$PATH:/home/$USER/go/bin"
 
-# Editor configurations
+# =============================================================================
+# EDITOR CONFIGURATION
+# =============================================================================
+
 export EDITOR=nvim
 export SUDO_EDITOR=nvim
 
-# Tmux configurations
+# =============================================================================
+# TMUX CONFIGURATION
+# =============================================================================
+
 alias tm="tmux attach -t default || tmux new -s default"
 export TMUX_TMPDIR='/tmp'
 
-# pnpm
+# =============================================================================
+# PNPM CONFIGURATION
+# =============================================================================
+
 export PNPM_HOME="/home/jorge/.local/share/pnpm"
 case ":$PATH:" in
 *":$PNPM_HOME:"*) ;;
 *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
-# pnpm end
 
+# =============================================================================
+# ALIASES
+# =============================================================================
+
+# File listing aliases with eza
 alias l='eza -la --header --git --icons --group-directories-first'
-
 alias lt='eza --tree --level=2 --long --header --git --icons --group-directories-first --ignore-glob="node_modules|dist|build|target|.git|bin|obj|Debug|Release|.next|.nuxt|.vscode|.idea|coverage|__pycache__|*.pyc"'
 alias ltt='eza --tree --level=3 --long --header --git --icons --group-directories-first --ignore-glob="node_modules|dist|build|target|.git|bin|obj|Debug|Release|.next|.nuxt|.vscode|.idea|coverage|__pycache__|*.pyc"'
 alias ltf='eza --tree --long --header --git --icons --group-directories-first --ignore-glob="node_modules|dist|build|target|.git|bin|obj|Debug|Release|.next|.nuxt|.vscode|.idea|coverage|__pycache__|*.pyc"'
 
+# Docker cleanup alias
 alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(docker container ls -aq)" ] && docker container rm -f $(docker container ls -aq) || true; [ "$(docker volume ls -q)" ] && docker volume rm -f $(docker volume ls -q) || true'
 
+# Other useful aliases
 alias lz='lazygit'
-
 alias cls='clear && printf "\033[3J"'
+
+# =============================================================================
+# XDG BASE DIRECTORY SPECIFICATION
+# =============================================================================
 
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# bun completions
+# =============================================================================
+# BUN CONFIGURATION
+# =============================================================================
+
+# Bun completions
 [ -s "/home/jorge/.bun/_bun" ] && source "/home/jorge/.bun/_bun"
 
-# bun
+# Bun path
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# =============================================================================
+# ZOXIDE CONFIGURATION
+# =============================================================================
+
 eval "$(zoxide init zsh)"
 
-# source
+# =============================================================================
+# CUSTOM CONFIGURATIONS
+# =============================================================================
+
+# Source custom configurations
 source ~/dotfiles/.zsh_history_ignore
 source ~/.sdkman/bin/sdkman-init.sh
 
-# cli rename
+# =============================================================================
+# CLI RENAME FUNCTIONS (FOR TMUX)
+# =============================================================================
+
+# Helper function to set process title in tmux
 _tmux_with_prefix_title() {
   local prefix="$1"
   shift
@@ -115,13 +182,16 @@ _tmux_with_prefix_title() {
   fi
 }
 
-# Simpler wrappers - using the same name for both prefix and command
+# Wrapper functions for CLI tools with custom titles
 codex() { _tmux_with_prefix_title codex "$@"; }
 gemini() { _tmux_with_prefix_title gemini "$@"; }
 qwen() { _tmux_with_prefix_title qwen "$@"; }
 copilot() { _tmux_with_prefix_title copilot "$@"; }
 
-# --- Warp tab title (no tmux) -------------------------------------------------
+# =============================================================================
+# TERMINAL TAB TITLE CONFIGURATION
+# =============================================================================
+
 # Send OSC title: ESC ] 0 ; <title> BEL
 _warp_set_title() {
   local t="${1//$'\n'/ }"
@@ -173,6 +243,5 @@ _precmd_title() { _warp_set_title "$(_pretty_idle_title)"; }
 precmd_functions+=(_precmd_title)
 preexec_functions+=(_preexec_title)
 
-# If oh-my-zsh tries to manage titles, ensure we’re in charge
+# If oh-my-zsh tries to manage titles, ensure we're in charge
 export DISABLE_AUTO_TITLE="true"
-# ------------------------------------------------------------------------------
