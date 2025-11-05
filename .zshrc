@@ -122,7 +122,7 @@ alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(d
 
 # Other useful aliases
 alias lz='lazygit'
-alias cls='clear && printf "\033[3J"'
+alias c='clear && printf "\033[3J"'
 
 # =============================================================================
 # XDG BASE DIRECTORY SPECIFICATION
