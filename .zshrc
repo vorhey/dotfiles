@@ -12,6 +12,9 @@ export ZSH_AI_PROVIDER="gemini"
 ZSH_THEME="light-colors"
 plugins=(git fzf zsh-autosuggestions zsh-ai)
 
+# Autosuggestions custom color
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=245'
+
 # Initialize Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
