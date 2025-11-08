@@ -71,6 +71,7 @@ export FZF_DEFAULT_OPTS="
   --color=fg:#000000,header:#005f87,info:#005f87,pointer:#005f87
   --color=marker:#d70000,fg+:#000000,prompt:#005f87,hl+:#005f87
   --color=border:#CFCFCF
+  --pointer='▌'
   --reverse
   --border
   --preview-window=border-rounded
