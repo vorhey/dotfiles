@@ -67,15 +67,15 @@ fkill() {
 }
 
 export FZF_DEFAULT_OPTS="
-  --color=bg+:#f0f0f0,bg:#ffffff,spinner:#6c6f93,hl:#005f87
-  --color=fg:#000000,header:#005f87,info:#005f87,pointer:#005f87
-  --color=marker:#d70000,fg+:#000000,prompt:#005f87,hl+:#005f87
-  --color=border:#CFCFCF
-  --pointer='▌'
-  --reverse
-  --border
-  --preview-window=border-rounded
-"
+    --color=bg:-1,bg+:-1,spinner:#6c6f93,hl:#FA6EBD
+    --color=fg:#c0c0c0,header:#FA6EBD,info:#FA6EBD,pointer:#A98FD9
+    --color=marker:#d70000,fg+:#c0c0c0,prompt:#FA6EBD,hl+:#A98FD9
+    --color=border:#CFCFCF
+    --pointer='▌'
+    --reverse
+    --border
+    --preview-window=border-rounded
+  "
 
 # =============================================================================
 # NODE VERSION MANAGER (NVM)
