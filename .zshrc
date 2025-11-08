@@ -66,6 +66,16 @@ fkill() {
   fi
 }
 
+export FZF_DEFAULT_OPTS="
+  --color=bg+:#f0f0f0,bg:#ffffff,spinner:#6c6f93,hl:#005f87
+  --color=fg:#000000,header:#005f87,info:#005f87,pointer:#005f87
+  --color=marker:#d70000,fg+:#000000,prompt:#005f87,hl+:#005f87
+  --color=border:#CFCFCF
+  --reverse
+  --border
+  --preview-window=border-rounded
+"
+
 # =============================================================================
 # NODE VERSION MANAGER (NVM)
 # =============================================================================
