@@ -53,9 +53,13 @@ find_project_info() {
 
     # Start from current directory and go up
     while [[ "$current_dir" != "/" && -n "$current_dir" ]]; do
+        # Avoid treating $HOME as a project just because it contains common editor dirs
+        if [[ "$current_dir" == "$HOME" ]]; then
+            break
+        fi
         for file in "${project_files[@]}"; do
             if [[ -e "$current_dir/$file" ]]; then
-                echo "󰉋 $(basename "$current_dir")"
+                echo " $(basename "$current_dir")"
                 return 0
             fi
         done
@@ -63,7 +67,7 @@ find_project_info() {
     done
 
     # If no project root found, return current directory name
-    echo "󰉋 $(basename "${1:-$(pwd)}")"
+    echo " $(basename "${1:-$(pwd)}")"
 }
 
 # Get the directory passed as argument or use current directory
