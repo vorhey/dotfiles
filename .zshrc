@@ -5,6 +5,9 @@
 # Path to Oh My Zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
+# Theme configuration - default to dark mode
+export TERM_COLOR="${TERM_COLOR:-dark}"
+
 # ZSH AI plugin configuration
 export ZSH_AI_PROVIDER="gemini"
 
@@ -69,16 +72,13 @@ fkill() {
   fi
 }
 
-export FZF_DEFAULT_OPTS="
-    --color=bg:-1,bg+:-1,spinner:#6c6f93,hl:#FA6EBD
-    --color=fg:#c0c0c0,header:#FA6EBD,info:#FA6EBD,pointer:#A98FD9
-    --color=marker:#d70000,fg+:#c0c0c0,prompt:#FA6EBD,hl+:#A98FD9
-    --color=border:#CFCFCF
-    --pointer='▌'
-    --reverse
-    --border
-    --preview-window=border-rounded
-  "
+# FZF Color theme - load based on TERM_COLOR
+if [[ -f ~/dotfiles/fzf-theme-${TERM_COLOR}.zsh ]]; then
+    source ~/dotfiles/fzf-theme-${TERM_COLOR}.zsh
+else
+    # Fallback to dark theme if theme file not found
+    source ~/dotfiles/fzf-theme-dark.zsh
+fi
 
 # =============================================================================
 # NODE VERSION MANAGER (NVM)
@@ -174,6 +174,35 @@ eval "$(zoxide init zsh)"
 # Source custom configurations
 source ~/dotfiles/.zsh_history_ignore
 source ~/.sdkman/bin/sdkman-init.sh
+
+# =============================================================================
+# THEME SWITCHING
+# =============================================================================
+
+# Function to switch between dark and light themes
+switch_theme() {
+    local new_theme="$1"
+
+    if [[ "$new_theme" != "dark" && "$new_theme" != "light" ]]; then
+        echo "Usage: switch_theme [dark|light]"
+        return 1
+    fi
+
+    export TERM_COLOR="$new_theme"
+
+    # Reload Zsh theme
+    source ~/dotfiles/light-colors.zsh-theme
+
+    # Reload FZF theme
+    source ~/dotfiles/fzf-theme-${new_theme}.zsh
+
+    # Update tmux if running in tmux
+    if [[ -n "$TMUX" ]]; then
+        tmux source-file ~/.tmux.conf
+    fi
+
+    echo "Theme switched to: $new_theme"
+}
 
 # =============================================================================
 # WARP TERMINAL TABS
