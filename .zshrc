@@ -74,10 +74,10 @@ fkill() {
 
 # FZF Color theme - load based on TERM_COLOR
 if [[ -f ~/dotfiles/fzf-theme-${TERM_COLOR}.zsh ]]; then
-    source ~/dotfiles/fzf-theme-${TERM_COLOR}.zsh
+  source ~/dotfiles/fzf-theme-${TERM_COLOR}.zsh
 else
-    # Fallback to dark theme if theme file not found
-    source ~/dotfiles/fzf-theme-dark.zsh
+  # Fallback to dark theme if theme file not found
+  source ~/dotfiles/fzf-theme-dark.zsh
 fi
 
 # =============================================================================
@@ -139,6 +139,7 @@ alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(d
 
 # Other useful aliases
 alias lz='lazygit'
+alias zj='zellij'
 alias c='clear && printf "\033[3J"'
 
 # =============================================================================
@@ -181,27 +182,27 @@ source ~/.sdkman/bin/sdkman-init.sh
 
 # Function to switch between dark and light themes
 switch_theme() {
-    local new_theme="$1"
+  local new_theme="$1"
 
-    if [[ "$new_theme" != "dark" && "$new_theme" != "light" ]]; then
-        echo "Usage: switch_theme [dark|light]"
-        return 1
-    fi
+  if [[ "$new_theme" != "dark" && "$new_theme" != "light" ]]; then
+    echo "Usage: switch_theme [dark|light]"
+    return 1
+  fi
 
-    export TERM_COLOR="$new_theme"
+  export TERM_COLOR="$new_theme"
 
-    # Reload Zsh theme
-    source ~/dotfiles/light-colors.zsh-theme
+  # Reload Zsh theme
+  source ~/dotfiles/light-colors.zsh-theme
 
-    # Reload FZF theme
-    source ~/dotfiles/fzf-theme-${new_theme}.zsh
+  # Reload FZF theme
+  source ~/dotfiles/fzf-theme-${new_theme}.zsh
 
-    # Update tmux if running in tmux
-    if [[ -n "$TMUX" ]]; then
-        tmux source-file ~/.tmux.conf
-    fi
+  # Update tmux if running in tmux
+  if [[ -n "$TMUX" ]]; then
+    tmux source-file ~/.tmux.conf
+  fi
 
-    echo "Theme switched to: $new_theme"
+  echo "Theme switched to: $new_theme"
 }
 
 # =============================================================================
@@ -253,3 +254,43 @@ codex() { _tmux_with_prefix_title codex "$@"; }
 gemini() { _tmux_with_prefix_title gemini "$@"; }
 qwen() { _tmux_with_prefix_title qwen "$@"; }
 copilot() { _tmux_with_prefix_title copilot "$@"; }
+
+# opencode
+export PATH=/home/jorge/.opencode/bin:$PATH
+
+function current_dir() {
+  local current_dir=$PWD
+  if [[ $current_dir == $HOME ]]; then
+    current_dir="~"
+  else
+    current_dir=${current_dir##*/}
+  fi
+
+  echo $current_dir
+}
+
+function change_tab_title() {
+  local title=$1
+  command nohup zellij action rename-tab $title >/dev/null 2>&1
+}
+
+function set_tab_to_working_dir() {
+  local result=$?
+  local title=$(current_dir)
+  # uncomment the following to show the exit code after a failed command
+  # if [[ $result -gt 0 ]]; then
+  #     title="$title [$result]"
+  # fi
+
+  change_tab_title $title
+}
+
+function set_tab_to_command_line() {
+  local cmdline=$1
+  change_tab_title $cmdline
+}
+
+if [[ -n $ZELLIJ ]]; then
+  add-zsh-hook precmd set_tab_to_working_dir
+  add-zsh-hook preexec set_tab_to_command_line
+fi
