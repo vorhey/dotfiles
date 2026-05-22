@@ -78,8 +78,8 @@ get_process_icon() {
     "copilot")
         echo " "
         ;;
-    "copilot")
-        echo " "
+    "opencode")
+        echo " 󰍳"
         ;;
     *)
         echo "Default case for: $process" >>"$log_file"
