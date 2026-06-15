@@ -141,6 +141,7 @@ alias dp='[ "$(docker ps -aq)" ] && docker stop $(docker ps -aq) || true; [ "$(d
 alias lz='lazygit'
 alias zj='zellij'
 alias c='clear && printf "\033[3J"'
+alias npm="socket npm"
 
 # =============================================================================
 # XDG BASE DIRECTORY SPECIFICATION

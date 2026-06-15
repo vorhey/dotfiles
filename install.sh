@@ -528,6 +528,16 @@ install_python() {
     fi
 }
 
+install_socket() {
+    if ! command_exists socket; then
+        echo "Installing socket.dev CLI..."
+        npm install -g socket
+        echo "socket.dev CLI installed successfully."
+    else
+        echo "socket.dev CLI is already installed."
+    fi
+}
+
 install_zoxide() {
     if ! command_exists zoxide; then
         echo "Installing zoxide..."
@@ -575,5 +585,6 @@ install_bunjs
 install_sdkman
 install_python
 install_zoxide
+install_socket
 
 echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
