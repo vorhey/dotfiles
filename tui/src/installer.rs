@@ -419,6 +419,7 @@ fn install_bottom() -> Res {
                 sudo_res(&["dnf", "copr", "enable", "atim/bottom", "-y"], "enable bottom copr")?;
                 sudo_res(&["dnf", "install", "-y", "bottom"], "install bottom")?;
             }
+            Distro::Arch => { pkg(&["bottom"])?; }
             _ => return err("no bottom install defined for this OS"),
         }
     }
