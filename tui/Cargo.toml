@@ -1,0 +1,17 @@
+[package]
+name = "dotfiles-tui"
+version = "0.1.0"
+edition = "2021"
+description = "A TUI for managing the jorge dotfiles: install tools, manage symlinks, browse configs, view system status."
+
+[[bin]]
+name = "dotfiles-tui"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+
+[profile.release]
+lto = true
+codegen-units = 1
