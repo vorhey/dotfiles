@@ -290,6 +290,9 @@ install_eza() {
     else
         echo "eza is already installed."
     fi
+    mkdir -p "${EZA_CONFIG_DIR:-$HOME/.config/eza}"
+    curl -sSfLo "${EZA_CONFIG_DIR:-$HOME/.config/eza}/theme.yml" https://raw.githubusercontent.com/benward2301/fzf-navigator/main/theme.yml
+    echo "eza theme installed."
 }
 
 install_lazygit() {
