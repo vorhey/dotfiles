@@ -25,7 +25,7 @@ find_project_info() {
 
     if [[ -n "$git_root" ]]; then
         # We're in a git repo, return the git repo name
-        echo " $(basename "$git_root")"
+        echo " $(basename "$git_root" | tr 'A-Z' 'a-z')"
         return 0
     fi
 
@@ -59,7 +59,7 @@ find_project_info() {
         fi
         for file in "${project_files[@]}"; do
             if [[ -e "$current_dir/$file" ]]; then
-                echo " $(basename "$current_dir")"
+                echo " $(basename "$current_dir" | tr 'A-Z' 'a-z')"
                 return 0
             fi
         done
@@ -67,7 +67,7 @@ find_project_info() {
     done
 
     # If no project root found, return current directory name
-    echo " $(basename "${1:-$(pwd)}")"
+    echo " $(basename "${1:-$(pwd)}" | tr 'A-Z' 'a-z')"
 }
 
 # Get the directory passed as argument or use current directory
