@@ -30,6 +30,12 @@ get_process_icon() {
     "docker")
         echo " "
         ;;
+    "sudo")
+        echo " 󰒃"
+        ;;
+    "chrome" | "google-chrome" | "chromium")
+        echo " 󰊯"
+        ;;
     "sh")
         echo " 󰷛"
         ;;
