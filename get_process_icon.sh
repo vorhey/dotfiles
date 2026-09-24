@@ -15,8 +15,26 @@ get_process_icon() {
     "vim")
         echo " "
         ;;
-    "zsh" | "bash")
+    "zsh" | "bash" | "fish")
         echo " "
+        ;;
+    "tmux")
+        echo " "
+        ;;
+    "ssh")
+        echo " 󰣀"
+        ;;
+    "git")
+        echo " "
+        ;;
+    "rg" | "grep" | "fzf")
+        echo " "
+        ;;
+    "code" | "codium")
+        echo " 󰨞"
+        ;;
+    "emacs")
+        echo " "
         ;;
     "node")
         echo " "
@@ -27,14 +45,59 @@ get_process_icon() {
     "python3")
         echo " "
         ;;
+    "ruby")
+        echo " "
+        ;;
+    "php")
+        echo " "
+        ;;
+    "go")
+        echo " "
+        ;;
+    "rustc" | "cargo")
+        echo " "
+        ;;
+    "deno")
+        echo " "
+        ;;
     "docker")
         echo " "
+        ;;
+    "kubectl" | "kubelet")
+        echo " 󱃾"
+        ;;
+    "terraform")
+        echo " 󱁢"
+        ;;
+    "psql" | "postgres")
+        echo " "
+        ;;
+    "mysql" | "mysqld")
+        echo " "
+        ;;
+    "redis-server")
+        echo " "
+        ;;
+    "ffmpeg")
+        echo " "
         ;;
     "sudo")
         echo " 󰒃"
         ;;
     "chrome" | "google-chrome" | "chromium")
         echo " 󰊯"
+        ;;
+    "firefox")
+        echo " 󰈹"
+        ;;
+    "brave" | "brave-browser")
+        echo " 󰖟"
+        ;;
+    "microsoft-edge" | "msedge")
+        echo " 󰇩"
+        ;;
+    "opera")
+        echo " 󰆃"
         ;;
     "sh")
         echo " 󰷛"
