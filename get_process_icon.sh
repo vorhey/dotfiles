@@ -12,7 +12,7 @@ get_process_icon() {
     "nvim")
         echo " "
         ;;
-    "vim")
+    "vim" | "vi")
         echo " "
         ;;
     "zsh" | "bash" | "fish")
