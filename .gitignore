@@ -1,4 +1,1 @@
 nvim
-
-# Rust TUI build artifacts
-tui/target/
