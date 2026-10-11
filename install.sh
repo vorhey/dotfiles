@@ -1,593 +1,648 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Run each tool in a separate, strict subshell so failures cannot be masked by
+# later commands, while the parent can continue with independent tools.
 
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
+TOOLS=(dev-tools rust nvm go node nvim tmux lsb-release pnpm ripgrep eza lazygit fzf fd bat zsh-autosuggestions zsh-ai bottom bun sdkman python zoxide socket)
+
+usage() {
+    cat <<'HELP'
+Usage: ./install.sh [--yes] [--dry-run] [--only TOOL,...] [--skip TOOL,...] [--tmux-sixel]
+
+Install missing tools and update existing tools on Debian/Ubuntu, Fedora,
+openSUSE, or Arch. Existing configuration is preserved. Failed tools are reported
+at the end; independent installs continue. Rerun with --only to retry failures.
+
+  --only LIST   Install/update only these tools (plus required dependencies)
+  --skip LIST   Exclude tools; dependents are blocked if a dependency is missing
+  --tmux-sixel Install/update selected tmux from source with SIXEL
+               (installs to /usr/local; default uses the distro package)
+  --dry-run     Show the offline plan; versions are checked during a real run
+  -y, --yes     Accept the installation plan (sudo may still ask for a password)
+  --list        List available tool names
+  -h, --help    Show this help
+
+Examples:
+  ./install.sh --dry-run
+  ./install.sh --only nvim,tmux,ripgrep
+  ./install.sh --only tmux --tmux-sixel
+  ./install.sh --yes --skip go,rust
+
+Default tmux mode backs up an old /usr/local/bin/tmux source build and links
+that path to /usr/bin/tmux, so the distro version takes precedence.
+
+Logs: ${XDG_STATE_HOME:-~/.local/state}/dotfiles/install/<run>/
+Exit status: 0 = success, 1 = failed/blocked tools, 2 = usage/preflight error.
+HELP
 }
 
-detect_os() {
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            echo $NAME
-        else
-            echo "Unknown Linux"
-        fi
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macOS"
-    else
-        echo "Unknown"
+has() { command -v "$1" >/dev/null 2>&1; }
+contains() { [[ " $1 " == *" $2 "* ]]; }
+fail() { printf 'Error: %s\n' "$*" >&2; return 1; }
+
+# These paths also make reruns recognize tools installed in an earlier session.
+setup_paths() {
+    export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+    export SDKMAN_DIR="${SDKMAN_DIR:-$HOME/.sdkman}"
+    export CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}"
+    export PATH="$HOME/.local/bin:$CARGO_HOME/bin:${BUN_INSTALL:-$HOME/.bun}/bin:${PNPM_HOME:-$HOME/.local/share/pnpm}:/usr/local/go/bin:/opt/nvim-linux-x86_64/bin:/opt/nvim-linux-arm64/bin:$PATH"
+    if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+        # shellcheck disable=SC1091
+        . "$NVM_DIR/nvm.sh" || return 1
     fi
+}
+
+detect_platform() {
+    [[ $(uname -s) == Linux && -r /etc/os-release ]] || {
+        fail 'This installer supports Linux only.'; return 1;
+    }
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    OS_NAME=${PRETTY_NAME:-$ID}
+    case " $ID ${ID_LIKE:-} " in
+        *debian*|*ubuntu*) PM=apt-get ;;
+        *fedora*) PM=dnf ;;
+        *suse*) PM=zypper ;;
+        *arch*) PM=pacman ;;
+        *) fail "Unsupported distribution: $OS_NAME"; return 1 ;;
+    esac
+    has "$PM" || { fail "Missing package manager: $PM"; return 1; }
+    case $(uname -m) in
+        x86_64) ARCH=amd64; NVIM_ARCH=x86_64 ;;
+        aarch64|arm64) ARCH=arm64; NVIM_ARCH=arm64 ;;
+        *) ARCH=unsupported; NVIM_ARCH=unsupported ;;
+    esac
+}
+
+admin() {
+    if (( EUID == 0 )); then "$@"; else sudo "$@"; fi
+}
+
+packages() {
+    case $PM in
+        apt-get) admin env DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" ;;
+        dnf) admin dnf install -y "$@" ;;
+        zypper) admin zypper --non-interactive install "$@" ;;
+        pacman) admin pacman -S --needed --noconfirm "$@" ;;
+    esac
+}
+
+download() {
+    curl --fail --location --show-error --silent --retry 3 \
+        --connect-timeout 20 --max-time 600 "$1" -o "$2"
+}
+
+upstream_script() {
+    local url=$1
+    shift
+    download "$url" "$WORK_DIR/upstream.sh"
+    "$@" "$WORK_DIR/upstream.sh"
+}
+
+plugin_dir() { printf '%s/plugins/%s' "${ZSH_CUSTOM:-${ZSH:-$HOME/.oh-my-zsh}/custom}" "$1"; }
+
+version_number() {
+    local value
+    value=$(cat)
+    [[ $value =~ ([0-9]+\.[0-9]+(\.[0-9]+)?) ]] || { fail "Cannot parse version: $value"; return 1; }
+    printf '%s\n' "${BASH_REMATCH[1]}"
+}
+
+current_release() {
+    local current=$1 latest=$2 highest
+    [[ -n $current ]] || return 1
+    highest=$(printf '%s\n%s\n' "$current" "$latest" | sort -V | tail -n 1)
+    if [[ $highest == "$current" ]]; then
+        printf 'Current version %s is already at or ahead of release %s.\n' "$current" "$latest"
+        return 0
+    fi
+    printf 'Update available: %s → %s\n' "$current" "$latest"
+    return 1
+}
+
+latest_tag() {
+    download "https://api.github.com/repos/$1/releases/latest" "$WORK_DIR/release.json" || return 1
+    jq -er '.tag_name | select(test("^v?[0-9]+\\.[0-9]+(\\.[0-9]+)?$"))' "$WORK_DIR/release.json"
+}
+
+owned_package() {
+    local path
+    path=$(command -v "$1") || return 1
+    path=$(readlink -f "$path") || return 1
+    case $PM in
+        apt-get) dpkg-query -S "$path" 2>/dev/null | sed -n '1s/: \/.*//p' ;;
+        dnf|zypper) rpm -qf --qf '%{NAME}\n' "$path" 2>/dev/null ;;
+        pacman) pacman -Qoq "$path" 2>/dev/null ;;
+    esac
+}
+
+verify_distro_command() {
+    local owner
+    if owner=$(owned_package "$1") && [[ -n $owner ]]; then return; fi
+    fail "The repository package was updated, but $(command -v "$1") is not distro-managed. Update or remove that overriding installation first."
+}
+
+# Stage a complete release beside its destination, retaining the previous
+# directory until the replacement succeeds. Never unpack over an old release.
+replace_directory() {
+    local source=$1 destination=$2 stage
+    admin mkdir -p "$(dirname "$destination")"
+    stage=$(admin mktemp -d "${destination}.update.XXXXXX")
+    if ! admin cp -a "$source" "$stage/new"; then
+        admin rm -rf -- "$stage"
+        return 1
+    fi
+    if [[ -e $destination || -L $destination ]]; then
+        if ! admin mv -- "$destination" "$stage/old"; then
+            admin rm -rf -- "$stage"
+            return 1
+        fi
+    fi
+    if ! admin mv -- "$stage/new" "$destination"; then
+        if [[ -e $stage/old || -L $stage/old ]]; then
+            admin mv -- "$stage/old" "$destination" || {
+                fail "Restore failed; previous installation is at $stage/old"; return 1;
+            }
+        fi
+        admin rm -rf -- "$stage"
+        return 1
+    fi
+    admin rm -rf -- "$stage"
+}
+
+update_plugin() {
+    local target=$1 url=$2 branch
+    if [[ ! -e $target ]]; then
+        git clone --depth 1 "$url" "$target"
+        return
+    fi
+    [[ -d $target/.git ]] || { fail "$target is not a Git checkout; cannot update it safely."; return 1; }
+    [[ -z $(git -C "$target" status --porcelain) ]] || { fail "$target has local changes; commit or stash them before updating."; return 1; }
+    branch=$(git -C "$target" symbolic-ref --quiet --short HEAD)
+    git -C "$target" fetch origin "$branch"
+    git -C "$target" merge --ff-only FETCH_HEAD
+}
+
+installed() {
+    case $1 in
+        dev-tools) return 1 ;; # Also refreshes package metadata before installs.
+        nvm) [[ -s "$NVM_DIR/nvm.sh" ]] ;;
+        sdkman) [[ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]] ;;
+        zsh-autosuggestions|zsh-ai) [[ -s "$(plugin_dir "$1")/$1.plugin.zsh" ]] ;;
+        rust) has rustc && has cargo ;;
+        node) has node && has npm ;;
+        python) has python3 && has pipx ;;
+        ripgrep) has rg ;;
+        bottom) has btm ;;
+        lsb-release) has lsb_release ;;
+        *) has "$1" ;;
+    esac
+}
+
+dependencies() {
+    case $1 in
+        dev-tools) ;;
+        node) printf 'dev-tools nvm' ;;
+        pnpm|bun|socket) printf 'dev-tools node' ;;
+        eza|bottom) printf 'dev-tools rust' ;;
+        *) printf 'dev-tools' ;;
+    esac
 }
 
 install_dev_tools() {
-    OS=$(detect_os)
-    echo "Installing development tools for $OS..."
-    case $OS in
-    "Ubuntu" | "Debian GNU/Linux")
-        echo "Installing basics..."
-        sudo apt update
-        sudo apt install -y build-essential unzip
-        sudo apt install wget curl git jq
-        ;;
-    "openSUSE Tumbleweed")
-        echo "Installing basics..."
-        sudo zypper refresh
-        sudo zypper install -y unzip jq
-        sudo zypper install -y -t pattern devel_basis devel_C_C++
-        ;;
-    "Fedora Linux")
-        echo "Installing basics..."
-        sudo dnf group install -y "Development Tools" "C Development Tools and Libraries"
-        sudo dnf install -y gcc gcc-c++ make unzip jq
-        ;;
-    *)
-        echo "No specific development tools installation defined for $OS."
-        ;;
+    case $PM in
+        apt-get)
+            admin apt-get update
+            packages build-essential curl wget git jq unzip zip ca-certificates ;;
+        dnf)
+            admin dnf makecache --refresh
+            packages gcc gcc-c++ make curl wget git jq unzip zip ca-certificates ;;
+        zypper)
+            admin zypper --non-interactive --verbose refresh
+            packages gcc gcc-c++ make curl wget git jq unzip zip ca-certificates ;;
+        pacman)
+            # Avoid Arch partial upgrades when refreshing the package database.
+            admin pacman -Syu --needed --noconfirm base-devel curl wget git jq unzip zip ca-certificates ;;
     esac
-    echo "Development tools installation complete."
 }
 
-install_rust() {
-    if ! command_exists rustc; then
-        echo "Installing Rust..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-        source $HOME/.cargo/env
-        echo "Rust installed successfully."
-    else
-        echo "Rust is already installed."
-    fi
-}
-
-install_nvm() {
-    if [ ! -d "$HOME/.nvm" ]; then
-        echo "Installing NVM..."
-        mkdir -p "$HOME/.nvm"
-        export NVM_DIR="$HOME/.nvm"
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-        echo "NVM installed successfully."
-    else
-        echo "NVM is already installed."
-    fi
-}
-
-install_go() {
-    if ! command -v go &>/dev/null; then
-        echo "Installing Go..."
-        GO_VERSION=$(curl -sL 'https://go.dev/VERSION?m=text' | grep -o 'go[0-9.]*')
-        if [ -z "$GO_VERSION" ]; then
-            echo "Failed to retrieve Go version. Exiting."
-            return 1
+use_distro_tmux() {
+    local local_binary=/usr/local/bin/tmux distro_binary=/usr/bin/tmux backup
+    [[ -x $distro_binary ]] || { fail "Distro tmux not found at $distro_binary"; return 1; }
+    if [[ -e $local_binary || -L $local_binary ]]; then
+        if [[ $(readlink -f "$local_binary") != "$distro_binary" ]]; then
+            backup=$(admin mktemp -d /usr/local/bin/.tmux-source-backup.XXXXXX)
+            admin cp -a -- "$local_binary" "$backup/tmux"
+            admin ln -s "$distro_binary" "$backup/replacement"
+            # Rename the prepared link over the old binary only after backup.
+            admin mv -Tf -- "$backup/replacement" "$local_binary"
+            printf 'Previous tmux saved to %s/tmux; using %s.\n' "$backup" "$distro_binary"
         fi
-        FILENAME="${GO_VERSION}.linux-amd64.tar.gz"
-        curl -O "https://dl.google.com/go/${FILENAME}"
-        if [ $? -ne 0 ]; then
-            echo "Failed to download Go package. Exiting."
-            return 1
-        fi
-        # Install Go
-        echo "Extracting Go..."
-        sudo rm -rf /usr/local/go
-        sudo tar -C /usr/local -xzf "${FILENAME}"
-        rm "${FILENAME}"
-
-        echo 'export PATH=$PATH:/usr/local/go/bin' >>~/.zshrc
-
-        echo "Go installed successfully."
-    else
-        echo "Go is already installed."
     fi
-}
-
-install_node() {
-    if ! command_exists node; then
-        echo "Installing node"
-        . ~/.nvm/nvm.sh
-        nvm install --lts
-        echo "Node installed"
-    else
-        echo "Node is already installed."
-    fi
-}
-
-install_nvim() {
-    if ! command_exists nvim; then
-        echo "Installing nvim"
-        OS=$(detect_os)
-        case $OS in
-        "Fedora Linux")
-            sudo dnf install -y neovim python3-neovim
-            ;;
-        *)
-            curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz
-            sudo rm -rf /opt/nvim
-            sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-            echo 'export PATH="$PATH:/opt/nvim-linux-x86_64/bin"' >>~/.zshrc
-            ;;
-        esac
-        echo "nvim installed"
-    else
-        echo "nvim is already installed."
-    fi
-}
-
-build_tmux_from_source() {
-    local tmp_dir
-    tmp_dir=$(mktemp -d)
-    if [ ! -d "$tmp_dir" ]; then
-        echo "Failed to create temporary directory for tmux build."
-        return 1
-    fi
-
-    if ! git clone https://github.com/tmux/tmux.git "$tmp_dir/tmux"; then
-        echo "Failed to clone tmux repository."
-        rm -rf "$tmp_dir"
-        return 1
-    fi
-
-    (
-        cd "$tmp_dir/tmux" || exit 1
-        sh autogen.sh
-        ./configure --enable-sixel
-        make -j"$(nproc)"
-        sudo make install
-    )
-    local build_status=$?
-    rm -rf "$tmp_dir"
-    return $build_status
+    hash -r
+    verify_distro_command tmux
 }
 
 install_tmux() {
-    if ! command_exists tmux; then
-        echo "Installing tmux"
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt update
-            sudo apt install -y git build-essential autoconf automake pkg-config libevent-dev libncurses-dev libutempter-dev libgd-dev
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper refresh
-            sudo zypper install -y git gcc make autoconf automake pkg-config libevent-devel ncurses-devel libutempter-devel libgd-devel
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y git gcc make autoconf automake pkgconfig libevent-devel ncurses-devel libutempter-devel libgd-devel
-            ;;
-        "Arch Linux")
-            sudo pacman -S --noconfirm git base-devel ncurses libevent libutempter pkgconf libgd
-            ;;
-        *)
-            echo "No tmux source installation defined for $OS."
-            return 0
-            ;;
-        esac
-        if build_tmux_from_source; then
-            echo "tmux installed from source with sixel support."
-        else
-            echo "tmux installation from source failed."
-            return 1
+    if [[ ${TMUX_SIXEL:-0} != 1 ]]; then
+        packages tmux
+        use_distro_tmux
+        return
+    fi
+    local commit fingerprint marker
+    git clone --depth 1 https://github.com/tmux/tmux.git "$WORK_DIR/tmux"
+    commit=$(git -C "$WORK_DIR/tmux" rev-parse HEAD)
+    marker="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/tmux-source"
+    if [[ -x /usr/local/bin/tmux && -f $marker ]]; then
+        fingerprint=$(sha256sum /usr/local/bin/tmux)
+        if [[ $(cat "$marker") == "$commit $fingerprint" ]]; then
+            printf 'Tmux source build is up to date (%s).\n' "$commit"
+            return
         fi
-    else
-        echo "tmux is already installed."
     fi
-}
-
-install_lsbrelease() {
-    OS=$(detect_os)
-    echo "Installing lsb-release for $OS..."
-    case $OS in
-    "Ubuntu" | "Debian GNU/Linux")
-        echo "Installing lsb-release..."
-        sudo apt update
-        sudo apt install -y lsb-release
-        ;;
-    "openSUSE Tumbleweed")
-        echo "Installing lsb-release..."
-        sudo zypper refresh
-        sudo zypper install -y lsb-release
-        ;;
-    "Fedora Linux")
-        echo "Installing redhat-lsb-core..."
-        sudo dnf install -y redhat-lsb-core
-        ;;
-    "Arch Linux")
-        echo "Installing redhat-lsb-core..."
-        sudo pacman -S --noconfirm lsb-release
-        ;;
-    *)
-        echo "No specific lsb-release installation defined for $OS."
-        ;;
+    case $PM in
+        apt-get) packages bison autoconf automake pkg-config libevent-dev libncurses-dev libutempter-dev libgd-dev ;;
+        dnf|zypper) packages bison autoconf automake pkg-config libevent-devel ncurses-devel libutempter-devel libgd-devel ;;
+        pacman) packages bison autoconf automake pkgconf libevent ncurses libutempter libgd ;;
     esac
-    echo "lsb-release installation complete."
+    cd "$WORK_DIR/tmux"
+    sh autogen.sh
+    ./configure --prefix=/usr/local --enable-sixel
+    make -j"$(getconf _NPROCESSORS_ONLN)"
+    admin make install
+    /usr/local/bin/tmux -V
+    fingerprint=$(sha256sum /usr/local/bin/tmux)
+    mkdir -p "$(dirname "$marker")"
+    printf '%s %s\n' "$commit" "$fingerprint" > "$marker"
 }
 
-install_pnpm() {
-    if ! command_exists pnpm; then
-        echo "Installing pnpm..."
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        echo "pnpm installed successfully."
-    else
-        echo "pnpm is already installed."
+install_go() {
+    local owner version current=''
+    if has go && owner=$(owned_package go) && [[ -n $owner ]]; then
+        packages "$owner"
+        return
     fi
-}
-
-install_ripgrep() {
-    OS=$(detect_os)
-    echo "Installing ripgrep for $OS..."
-    case $OS in
-    "Ubuntu" | "Debian GNU/Linux")
-        sudo apt install -y ripgrep
-        ;;
-    "openSUSE Tumbleweed")
-        sudo zypper install -y ripgrep
-        ;;
-    "Fedora Linux")
-        sudo dnf install -y ripgrep
-        ;;
-    "Arch Linux")
-        sudo pacman -S --noconfirm ripgrep
-        ;;
-    *)
-        echo "No specific ripgrep installation defined for $OS."
-        ;;
-    esac
-    echo "Development tools installation complete."
-}
-
-install_eza() {
-    if ! command_exists eza; then
-        echo "Installing eza..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu")
-            sudo apt install -y eza
-            ;;
-        "Debian GNU/Linux")
-            sudo apt update
-            sudo apt install -y gpg
-            sudo mkdir -p /etc/apt/keyrings
-            wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-            echo "deb [signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-            sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
-            sudo apt update
-            sudo apt install -y eza
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y eza
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y eza
-            ;;
-        *)
-            if command_exists cargo; then
-                cargo install eza
-            else
-                echo "Neither package manager installation nor cargo is available for eza on $OS"
-            fi
-            ;;
-        esac
-        echo "eza installed successfully."
-    else
-        echo "eza is already installed."
+    [[ $ARCH != unsupported ]] || { fail 'Go downloads require x86_64 or ARM64.'; return 1; }
+    if has go; then current=$(go version | version_number); fi
+    download 'https://go.dev/VERSION?m=text' "$WORK_DIR/version"
+    read -r version < "$WORK_DIR/version"
+    [[ $version =~ ^go[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { fail 'Invalid Go release response.'; return 1; }
+    if current_release "$current" "${version#go}"; then return; fi
+    if has go && [[ $(readlink -f "$(command -v go)") != /usr/local/go/bin/go ]]; then
+        fail 'Go is managed outside /usr/local/go; update it with its original installer.'; return 1
     fi
-    mkdir -p "${EZA_CONFIG_DIR:-$HOME/.config/eza}"
-    curl -sSfLo "${EZA_CONFIG_DIR:-$HOME/.config/eza}/theme.yml" https://raw.githubusercontent.com/benward2301/fzf-navigator/main/theme.yml
-    echo "eza theme installed."
+    if [[ -e /usr/local/go && ! -x /usr/local/go/bin/go ]]; then
+        fail '/usr/local/go is not a recognized Go installation.'; return 1
+    fi
+    download "https://go.dev/dl/$version.linux-$ARCH.tar.gz" "$WORK_DIR/go.tar.gz"
+    tar -xzf "$WORK_DIR/go.tar.gz" -C "$WORK_DIR"
+    "$WORK_DIR/go/bin/go" version
+    replace_directory "$WORK_DIR/go" /usr/local/go
+}
+
+install_nvim() {
+    local owner tag current=''
+    if has nvim && owner=$(owned_package nvim) && [[ -n $owner ]]; then
+        packages "$owner"
+        return
+    fi
+    [[ $NVIM_ARCH != unsupported ]] || { fail 'Neovim downloads require x86_64 or ARM64.'; return 1; }
+    local destination="/opt/nvim-linux-$NVIM_ARCH"
+    tag=$(latest_tag neovim/neovim)
+    if has nvim; then current=$(nvim --version | sed -n '1p' | version_number); fi
+    if current_release "$current" "${tag#v}"; then return; fi
+    if [[ -e $destination && ! -x $destination/bin/nvim ]]; then
+        fail "$destination is not a recognized Neovim installation."; return 1
+    fi
+    if [[ -e /usr/local/bin/nvim || -L /usr/local/bin/nvim ]]; then
+        [[ -L /usr/local/bin/nvim && $(readlink /usr/local/bin/nvim) == "$destination/bin/nvim" ]] || {
+            fail '/usr/local/bin/nvim is not the managed symlink; refusing to overwrite it.'; return 1;
+        }
+    fi
+    download "https://github.com/neovim/neovim/releases/download/$tag/nvim-linux-$NVIM_ARCH.tar.gz" "$WORK_DIR/nvim.tar.gz"
+    tar -xzf "$WORK_DIR/nvim.tar.gz" -C "$WORK_DIR"
+    "$WORK_DIR/nvim-linux-$NVIM_ARCH/bin/nvim" --version
+    admin mkdir -p /opt /usr/local/bin
+    replace_directory "$WORK_DIR/nvim-linux-$NVIM_ARCH" "$destination"
+    if [[ ! -L /usr/local/bin/nvim ]]; then admin ln -s "$destination/bin/nvim" /usr/local/bin/nvim; fi
 }
 
 install_lazygit() {
-    if ! command_exists lazygit; then
-        echo "Installing lazygit"
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*')
-            curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-            tar xf lazygit.tar.gz lazygit
-            sudo install lazygit -D -t /usr/local/bin/
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper ar https://download.opensuse.org/repositories/devel:/languages:/go/openSUSE_Factory/devel:languages:go.repo
-            sudo zypper ref && sudo zypper in lazygit
-            ;;
-        "Fedora Linux")
-            sudo dnf copr enable atim/lazygit -y
-            sudo dnf install lazygit
-            ;;
-        "Arch Linux")
-            sudo pacman -S --noconfirm lazygit
-            ;;
-        *)
-            echo "No lazygit installation found for this distro $OS."
-            ;;
-
-        esac
-        echo "Lazygit installed successfully."
-    else
-        echo "Lazygit already installed"
+    local owner current=''
+    if has lazygit && owner=$(owned_package lazygit) && [[ -n $owner ]]; then
+        packages "$owner"
+        return
     fi
+    [[ $ARCH != unsupported ]] || { fail 'Lazygit downloads require x86_64 or ARM64.'; return 1; }
+    local version asset_arch staged_binary
+    version=$(latest_tag jesseduffield/lazygit)
+    version=${version#v}
+    [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { fail 'Invalid Lazygit release response.'; return 1; }
+    if has lazygit; then current=$(lazygit --version | sed -n 's/.*version=\([^, ]*\).*/\1/p' | version_number); fi
+    if current_release "$current" "$version"; then return; fi
+    asset_arch=$NVIM_ARCH
+    download "https://github.com/jesseduffield/lazygit/releases/download/v$version/lazygit_${version}_Linux_${asset_arch}.tar.gz" "$WORK_DIR/lazygit.tar.gz"
+    tar -xzf "$WORK_DIR/lazygit.tar.gz" -C "$WORK_DIR" lazygit
+    "$WORK_DIR/lazygit" --version
+    mkdir -p "$HOME/.local/bin"
+    staged_binary=$(mktemp "$HOME/.local/bin/.lazygit.XXXXXX")
+    if ! install -m755 "$WORK_DIR/lazygit" "$staged_binary"; then
+        rm -f -- "$staged_binary"
+        return 1
+    fi
+    mv -f -- "$staged_binary" "$HOME/.local/bin/lazygit"
 }
 
-install_fzf_fd_bat() {
-    if ! command_exists fzf; then
-        echo "Installing fzf..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y fzf
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y fzf
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y fzf
-            ;;
-        "Arch Linux")
-            sudo pacman -S --noconfirm fzf
-            ;;
-        *)
-            echo "No fzf installation found for this distro $OS."
-            ;;
-
-        esac
-        echo "fzf installed successfully."
-    else
-        echo "fzf already installed"
-    fi
-
-    if ! command_exists fd; then
-        echo "Installing fd..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y fd-find
-            mkdir -p ~/.local/bin
-            ln -sf /usr/bin/fdfind ~/.local/bin/fd
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y fd
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y fd
-            ;;
-        "Arch Linux")
-            sudo pacman -S --noconfirm fd
-            ;;
-        *)
-            echo "No fd installation found for this distro $OS."
-            ;;
-
-        esac
-        echo "fd installed successfully."
-    else
-        echo "fd already installed"
-    fi
-    if ! command_exists bat; then
-        echo "Installing bat..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt install -y bat
-            mkdir -p ~/.local/bin
-            ln -sf /usr/bin/batcat ~/.local/bin/bat
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y bat
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y bat
-            ;;
-        "Arch Linux")
-            sudo pacman -S --noconfirm bat
-            ;;
-        *)
-            echo "No bat installation found for this distro $OS."
-            ;;
-
-        esac
-        echo "bat installed successfully."
-    else
-        echo "bat already installed"
-    fi
-    echo "fzf, fd and bat installed successfully."
-}
-
-install_zsh_autosuggestions() {
-    if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-        echo "Installing zsh-autosuggestions..."
-        git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-        echo "zsh-autosuggestions installed successfully."
-    else
-        echo "zsh-autosuggestions is already installed."
-    fi
-}
-
-install_zsh_ai() {
-    if [ ! -d "$HOME/.oh-my-zsh/custom/plugins/zsh-ai" ]; then
-        echo "Installing zsh-ai..."
-        git clone https://github.com/matheusml/zsh-ai ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-ai
-        echo "zsh-ai installed successfully."
-    else
-        echo "zsh-ai is already installed."
-    fi
-}
-
-install_bottom() {
-    if ! command_exists btm; then
-        echo "Installing bottom..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            # Get latest version from GitHub
-            BOTTOM_VERSION=$(curl -s "https://api.github.com/repos/ClementTsang/bottom/releases/latest" | \grep -Po '"tag_name": *"\K[^"]*')
-            if [ -z "$BOTTOM_VERSION" ]; then
-                echo "Failed to get latest bottom version. Exiting installation."
-                return 1
+install_tool() {
+    local tool=$1 target tag current='' owner binary
+    case $tool in
+        dev-tools) install_dev_tools ;;
+        rust)
+            if has rustup; then rustup update
+            elif has rustc && owner=$(owned_package rustc) && [[ -n $owner ]]; then packages "$owner" cargo
+            else
+                download https://sh.rustup.rs "$WORK_DIR/rustup.sh"
+                sh "$WORK_DIR/rustup.sh" -y --no-modify-path
+            fi ;;
+        nvm)
+            tag=$(latest_tag nvm-sh/nvm)
+            if has nvm; then current=$(nvm --version | version_number); fi
+            if current_release "$current" "${tag#v}"; then return; fi
+            if [[ -d $NVM_DIR/.git && -n $(git -C "$NVM_DIR" status --porcelain) ]]; then
+                fail "$NVM_DIR has local changes; commit or stash them before updating."; return 1
             fi
-            echo "Installing bottom version ${BOTTOM_VERSION}..."
-            curl -LO "https://github.com/ClementTsang/bottom/releases/download/${BOTTOM_VERSION}/bottom_${BOTTOM_VERSION}-1_amd64.deb"
-            sudo dpkg -i "bottom_${BOTTOM_VERSION}-1_amd64.deb"
-            rm "bottom_${BOTTOM_VERSION}-1_amd64.deb"
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper install -y bottom
-            ;;
-        "Fedora Linux")
-            sudo dnf copr enable atim/bottom -y
-            sudo dnf install -y bottom
-            ;;
-        *)
-            echo "No package manager installation available for bottom on $OS"
-            ;;
-        esac
-
-        # Create bottom config directory and file
-        mkdir -p ~/.config/bottom
-        echo "[flags]
-basic = true
-tree = true" >~/.config/bottom/bottom.toml
-
-        echo "bottom installed and configured with basic tree view."
-    else
-        echo "bottom is already installed."
-        # Add configuration even if bottom was already installed
-        mkdir -p ~/.config/bottom
-        echo "[flags]
-basic = true
-tree = true" >~/.config/bottom/bottom.toml
-        echo "bottom configuration updated with basic tree view."
-    fi
+            mkdir -p "$NVM_DIR"
+            upstream_script "https://raw.githubusercontent.com/nvm-sh/nvm/$tag/install.sh" env PROFILE=/dev/null bash ;;
+        node)
+            if has node; then
+                current=$(node --version | version_number)
+                tag=$(nvm version-remote --lts)
+                target=$(printf '%s' "$tag" | version_number)
+                if current_release "$current" "$target"; then return; fi
+                nvm install --lts --reinstall-packages-from=current || return 1
+            else nvm install --lts || return 1; fi
+            nvm alias default 'lts/*' || return 1 ;;
+        go) install_go ;;
+        nvim) install_nvim ;;
+        tmux) install_tmux ;;
+        lsb-release)
+            if [[ $PM == dnf ]]; then packages redhat-lsb-core; else packages lsb-release; fi
+            verify_distro_command lsb_release ;;
+        bun)
+            # Bun's own installer leaves a standalone binary that precedes
+            # ~/.local/bin on PATH; update it instead of shadowing it via npm,
+            # and drop the npm copy it shadows so only one Bun remains.
+            binary=${BUN_INSTALL:-$HOME/.bun}/bin/bun
+            if [[ -x $binary ]]; then
+                "$binary" upgrade
+                if [[ -d $HOME/.local/lib/node_modules/bun ]]; then
+                    npm uninstall --global --prefix "$HOME/.local" bun
+                fi
+            else npm install --global --prefix "$HOME/.local" bun@latest; fi ;;
+        pnpm|socket) npm install --global --prefix "$HOME/.local" "$tool@latest" ;;
+        ripgrep|fzf)
+            packages "$tool"
+            binary=$tool
+            [[ $tool != ripgrep ]] || binary=rg
+            verify_distro_command "$binary" ;;
+        eza|bottom)
+            binary=$tool
+            [[ $tool != bottom ]] || binary=btm
+            if has "$binary" && [[ $(command -v "$binary") == "$CARGO_HOME/bin/$binary" ]]; then
+                cargo install --locked "$tool"
+            elif packages "$tool"; then verify_distro_command "$binary"
+            else cargo install --locked "$tool"; fi ;;
+        lazygit) install_lazygit ;;
+        fd|bat)
+            if [[ $PM == apt-get ]]; then
+                if [[ $tool == fd ]]; then
+                    packages fd-find
+                    target=$(command -v fdfind)
+                else
+                    packages bat
+                    target=$(command -v batcat)
+                fi
+                mkdir -p "$HOME/.local/bin"
+                if [[ ! -e $HOME/.local/bin/$tool && ! -L $HOME/.local/bin/$tool ]]; then
+                    ln -s "$target" "$HOME/.local/bin/$tool"
+                fi
+            else packages "$tool"; fi
+            verify_distro_command "$tool" ;;
+        zsh-autosuggestions|zsh-ai)
+            target=$(plugin_dir "$tool")
+            if [[ $tool == zsh-ai ]]; then
+                update_plugin "$target" https://github.com/matheusml/zsh-ai
+            else update_plugin "$target" https://github.com/zsh-users/zsh-autosuggestions; fi ;;
+        sdkman)
+            if installed sdkman; then
+                # SDKMAN's shell functions are not compatible with errexit.
+                bash -o pipefail -c '. "$SDKMAN_DIR/bin/sdkman-init.sh" && sdk selfupdate'
+            else upstream_script 'https://get.sdkman.io?rcupdate=false' bash; fi ;;
+        python)
+            case $PM in
+                apt-get) packages python3 python3-pip python3-venv pipx ;;
+                dnf) packages python3 python3-pip pipx ;;
+                zypper) packages python3 python3-pip python3-pipx ;;
+                pacman) packages python python-pip python-pipx ;;
+            esac
+            verify_distro_command python3
+            verify_distro_command pipx ;;
+        zoxide)
+            if has zoxide && owner=$(owned_package zoxide) && [[ -n $owner ]]; then
+                packages "$owner"
+            else
+                tag=$(latest_tag ajeetdsouza/zoxide)
+                if has zoxide; then current=$(zoxide --version | version_number); fi
+                if current_release "$current" "${tag#v}"; then return; fi
+                upstream_script https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh sh
+            fi ;;
+    esac
 }
 
-install_bunjs() {
-    if ! command_exists bun; then
-        echo "Installing bunjs..."
-        curl -fsSL https://bun.sh/install | bash
-        git restore .zshrc
-        echo "bunjs installed successfully."
-    else
-        echo "bunjs is already installed."
-    fi
+configure_tool() {
+    local target
+    case $1 in
+        eza)
+            target="${EZA_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/eza}/theme.yml"
+            if [[ ! -e $target && ! -L $target ]]; then
+                download https://raw.githubusercontent.com/benward2301/fzf-navigator/main/theme.yml "$WORK_DIR/theme.yml"
+                mkdir -p "$(dirname "$target")"
+                cp "$WORK_DIR/theme.yml" "$target"
+            fi ;;
+        bottom)
+            target="${XDG_CONFIG_HOME:-$HOME/.config}/bottom/bottom.toml"
+            if [[ ! -e $target && ! -L $target ]]; then
+                mkdir -p "$(dirname "$target")"
+                printf '[flags]\nbasic = true\ntree = true\n' > "$target"
+            fi ;;
+    esac
 }
 
-install_python() {
-    if ! command_exists python3; then
-        echo "Installing Python..."
-        OS=$(detect_os)
-        case $OS in
-        "Ubuntu" | "Debian GNU/Linux")
-            sudo apt update
-            sudo apt install -y python3 python3-pip python3-venv build-essential libssl-dev libffi-dev python3-dev
-            ;;
-        "openSUSE Tumbleweed")
-            sudo zypper refresh
-            sudo zypper install -y python3 python3-pip python3-devel
-            ;;
-        "Fedora Linux")
-            sudo dnf install -y python3 python3-pip python3-devel
-            ;;
-        "Arch Linux")
-            sudo pacman -S python
-            ;;
-        *)
-            echo "No specific Python installation defined for $OS."
-            ;;
-        esac
+# Do not invoke this function through `if`, `!`, or `&&`: those contexts
+# disable Bash errexit inside functions and would hide installation failures.
+run_tool() (
+    set -Ee -o pipefail
+    WORK_DIR=$(mktemp -d)
+    trap 'rm -rf -- "$WORK_DIR"' EXIT
+    trap 'printf "Failed at line %s: %s\n" "$LINENO" "$BASH_COMMAND" >&2' ERR
+    setup_paths
+    install_tool "$1"
+    setup_paths
+    if [[ $1 != dev-tools ]]; then
+        installed "$1" || { fail "$1 finished but could not be verified."; exit 1; }
+    fi
+    configure_tool "$1"
+)
 
-        # Install pipx for managing Python applications in isolated environments
-        if ! command_exists pipx; then
-            echo "Installing pipx..."
-            python3 -m pip install --user pipx
-            python3 -m pipx ensurepath
+add_to_plan() {
+    local tool=$1 dep
+    contains "$EXCLUDED" "$tool" && return 0
+    contains "${PLAN[*]}" "$tool" && return 0
+    for dep in $(dependencies "$tool"); do add_to_plan "$dep"; done
+    PLAN+=("$tool")
+}
+
+validate_list() {
+    local item
+    [[ -n $1 && $1 != ,* && $1 != *, && $1 != *,,* ]] || { fail 'Expected a comma-separated tool list.'; return 1; }
+    for item in ${1//,/ }; do
+        contains "${TOOLS[*]}" "$item" || { fail "Unknown tool: $item (see --list)"; return 1; }
+    done
+}
+
+show_progress() {
+    # A single output writer keeps the spinner below incoming log lines.
+    # Leave redirected output plain, with no animation or escape sequences.
+    if [[ ! -t 1 || ${TERM:-dumb} == dumb ]]; then cat; return; fi
+    local tool=$1 frames="|/-\\" frame=0 line pending='' read_status
+    trap 'printf "\r\033[2K"' EXIT
+    while :; do
+        printf '\r\033[2K[%s] %s' "${frames:frame:1}" "$tool"
+        frame=$(( (frame + 1) % 4 ))
+        line=''
+        if IFS= read -r -t 0.1 line; then read_status=0; else read_status=$?; fi
+        pending+=$line
+        if (( read_status == 0 )); then
+            printf '\r\033[2K%s\n' "$pending"
+            pending=''
+        elif (( read_status > 128 )); then
+            # read retains partial lines on timeout; keep them for the next read.
+            continue
+        else
+            printf '\r\033[2K'
+            [[ -z $pending ]] || printf '%s\n' "$pending"
+            break
         fi
-
-        # Create useful aliases
-        echo 'alias python=python3' >>~/.zshrc
-        echo 'alias pip=pip3' >>~/.zshrc
-
-        echo "Python installed successfully."
-    else
-        echo "Python is already installed."
-    fi
+    done
 }
 
-install_socket() {
-    if ! command_exists socket; then
-        echo "Installing socket.dev CLI..."
-        npm install -g socket
-        echo "socket.dev CLI installed successfully."
-    else
-        echo "socket.dev CLI is already installed."
+main() {
+    local only='' skip='' yes=0 dry_run=0 tool dep status log answer blocked
+    local TMUX_SIXEL=0
+    local -a PLAN=() completed=() failed=() skipped=() pipeline_status=()
+    while (( $# )); do
+        case $1 in
+            --help|-h) usage; return 0 ;;
+            --list) printf '%s\n' "${TOOLS[@]}"; return 0 ;;
+            --yes|-y) yes=1 ;;
+            --dry-run) dry_run=1 ;;
+            --tmux-sixel) TMUX_SIXEL=1 ;;
+            --only|--skip)
+                [[ $# -ge 2 ]] || { fail "$1 needs a tool list."; return 2; }
+                validate_list "$2" || return 2
+                if [[ $1 == --only ]]; then only=${2//,/ }; else skip=${2//,/ }; fi
+                shift ;;
+            *) fail "Unknown option: $1 (see --help)"; return 2 ;;
+        esac
+        shift
+    done
+    detect_platform || return 2
+    setup_paths || { fail 'Could not load the existing NVM environment.'; return 2; }
+    EXCLUDED=$skip
+    for tool in ${only:-${TOOLS[*]}}; do add_to_plan "$tool"; done
+    (( ${#PLAN[@]} )) || { printf 'Nothing selected.\n'; return 0; }
+    printf 'Development tools — %s\n\n' "$OS_NAME"
+    for tool in "${PLAN[@]}"; do
+        if [[ $tool == tmux && $TMUX_SIXEL == 1 ]]; then
+            status='check source updates / build with SIXEL → /usr/local/bin/tmux'
+        elif [[ $tool == dev-tools ]]; then status='refresh repositories and install/update prerequisites'
+        elif installed "$tool"; then status='check for updates and apply if available'
+        elif [[ $tool == tmux ]]; then status='install distro package'
+        else status='install'; fi
+        printf '  %-22s %s\n' "$tool" "$status"
+    done
+    if [[ $PM == pacman ]] && contains "${PLAN[*]}" dev-tools; then
+        printf '\nArch preparation includes a full system upgrade (pacman -Syu).\n'
     fi
-}
-
-install_zoxide() {
-    if ! command_exists zoxide; then
-        echo "Installing zoxide..."
-        curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-        git restore .zshrc
-        echo "zoxide installed successfully."
-    else
-        echo "zoxide is already installed."
+    (( dry_run )) && return 0
+    if (( ! yes )); then
+        [[ -t 0 ]] || { fail 'Use --yes for a noninteractive run, or --dry-run to preview.'; return 2; }
+        read -r -p $'\nProceed? [y/N] ' answer
+        [[ $answer == y || $answer == Y || $answer == yes ]] || { printf 'Cancelled.\n'; return 0; }
     fi
-}
-
-install_sdkman() {
-    if [ ! -d "$HOME/.sdkman" ]; then
-        echo "Installing SDKMAN..."
-        curl -s "https://get.sdkman.io" | bash
-        export SDKMAN_DIR="$HOME/.sdkman"
-        if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
-            . "$SDKMAN_DIR/bin/sdkman-init.sh"
+    if (( EUID != 0 )); then
+        has sudo || { fail 'sudo is required for system packages.'; return 2; }
+        sudo -v || return 2
+    fi
+    local log_root="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/install"
+    mkdir -p "$log_root" || return 2
+    LOG_DIR=$(mktemp -d "$log_root/$(date +%Y%m%d-%H%M%S).XXXXXX") || return 2
+    printf '\nLogs: %s\n' "$LOG_DIR"
+    trap 'printf "\nInterrupted. Logs: %s\n" "$LOG_DIR"; exit 130' INT
+    trap 'printf "\nTerminated. Logs: %s\n" "$LOG_DIR"; exit 143' TERM
+    for tool in "${PLAN[@]}"; do
+        blocked=''
+        for dep in $(dependencies "$tool"); do
+            if contains "${failed[*]} ${skipped[*]}" "$dep" ||
+                { contains "$EXCLUDED" "$dep" && ! installed "$dep"; }; then
+                blocked=$dep
+                break
+            fi
+        done
+        if [[ -n $blocked ]]; then
+            printf '[BLOCKED] %s: dependency %s is unavailable\n' "$tool" "$blocked"
+            skipped+=("$tool")
+            continue
         fi
-        echo "SDKMAN installed successfully."
-    else
-        echo "SDKMAN is already installed."
+        log="$LOG_DIR/$tool.log"
+        printf '[RUN] %s (output: %s)\n' "$tool" "$log"
+        # Keep this pipeline outside a conditional so run_tool retains errexit.
+        # Capture all statuses immediately: output handling must not hide a
+        # failed install, and a log write failure must also be reported.
+        run_tool "$tool" 2>&1 | tee "$log" | show_progress "$tool"
+        pipeline_status=("${PIPESTATUS[@]}")
+        status=${pipeline_status[0]}
+        if (( pipeline_status[1] != 0 )); then
+            printf '[FAILED] Could not write the complete log: %s\n' "$log" >&2
+            (( status != 0 )) || status=${pipeline_status[1]}
+        fi
+        if (( pipeline_status[2] != 0 )); then
+            printf '[FAILED] Could not display output for %s\n' "$tool" >&2
+            (( status != 0 )) || status=${pipeline_status[2]}
+        fi
+        if (( status == 0 )); then
+            printf '[OK] %s\n' "$tool"
+            completed+=("$tool")
+        else
+            printf '[FAILED] %s (exit %s)\n' "$tool" "$status"
+            failed+=("$tool")
+        fi
+    done
+    printf '\nFinished: %s successful, %s failed, %s blocked.\n' "${#completed[@]}" "${#failed[@]}" "${#skipped[@]}"
+    printf 'Logs: %s\n' "$LOG_DIR"
+    if (( ${#failed[@]} + ${#skipped[@]} )); then
+        local retry
+        retry=$(IFS=,; printf '%s' "${failed[*]}${failed[*]:+,}${skipped[*]}")
+        retry=${retry%,}
+        printf 'After resolving the errors, retry: ./install.sh --only %s' "$retry"
+        if (( TMUX_SIXEL )) && contains "${failed[*]} ${skipped[*]}" tmux; then
+            printf ' --tmux-sixel'
+        fi
+        printf '\n'
+        return 1
     fi
+    printf 'Open a new terminal. Ensure ~/.local/bin and ~/.cargo/bin are on your PATH.\n'
 }
 
-echo "Starting installation of development tools..."
-
-install_dev_tools
-install_rust
-install_nvm
-install_go
-install_node
-install_nvim
-install_tmux
-install_lsbrelease
-install_pnpm
-install_ripgrep
-install_eza
-install_lazygit
-install_fzf_fd_bat
-install_zsh_autosuggestions
-install_zsh_ai
-install_bottom
-install_bunjs
-install_sdkman
-install_python
-install_zoxide
-install_socket
-
-echo "Installation complete. Please restart your terminal or run 'source ~/.zshrc' to apply changes."
+# Parse the invocation and exit together before main starts. If this file is
+# edited during an install, Bash must not resume reading at a stale offset.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; exit $?; fi
