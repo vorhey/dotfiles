@@ -22,4 +22,5 @@ create_symlink() {
 create_symlink ~/.config/nvim nvim
 create_symlink ~/dotfiles/.zshrc ~/.zshrc
 create_symlink ~/dotfiles/.tmux.conf ~/.tmux.conf
+create_symlink ~/dotfiles/herdr/config.toml ~/.config/herdr/config.toml
 create_symlink ~/dotfiles/light-colors.zsh-theme ~/.oh-my-zsh/themes/light-colors.zsh-theme

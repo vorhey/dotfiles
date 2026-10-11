@@ -1,0 +1,25 @@
+onboarding = false
+[keys]
+prefix = "ctrl+a"
+new_tab = ["prefix+c", "alt+o"]
+switch_tab = ["prefix+1..9", "alt+1..9"]
+next_workspace = "alt+n"
+previous_workspace = "alt+p"
+next_agent = "alt+shift+n"
+previous_agent = "alt+shift+p"
+rename_tab = "prefix+r"
+resize_mode = ""
+
+[theme]
+auto_switch = true
+dark_name = "catppuccin"
+light_name = "catppuccin-latte"
+
+[theme.custom]
+panel_bg = "reset"
+
+[ui]
+host_cursor = "native"
+
+[ui.sound]
+enabled = false
