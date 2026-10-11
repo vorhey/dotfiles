@@ -6,8 +6,27 @@ export COLORTERM=truecolor
 # Path to Oh My Zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
-# Theme configuration - default to dark mode
+# Theme configuration - follow the terminal background, default to dark mode
 export TERM_COLOR="${TERM_COLOR:-dark}"
+
+# COLORFGBG goes along with TERM_COLOR: lipgloss/termenv apps skip the OSC 11
+# query inside tmux and assume a dark background unless this says otherwise
+_set_term_color() {
+  export TERM_COLOR="$1"
+  [[ "$1" == light ]] && export COLORFGBG="0;15" || export COLORFGBG="15;0"
+}
+
+# Detect light/dark from the terminal background (OSC 11) and bring tmux along
+_sync_term_color() {
+  local detected
+  [[ -t 0 && -t 1 ]] || return 1
+  detected="$(~/dotfiles/detect-theme.sh 2>/dev/null)" || return 1
+  _set_term_color "$detected"
+  if [[ -n "$TMUX" && "$(tmux show -gqv @theme)" != "$detected" ]]; then
+    tmux source-file ~/dotfiles/tmux-theme-${detected}.conf
+  fi
+}
+_sync_term_color
 
 # ZSH AI plugin configuration
 export ZSH_AI_PROVIDER="gemini"
@@ -112,7 +131,11 @@ export SUDO_EDITOR=nvim
 # TMUX CONFIGURATION
 # =============================================================================
 
-alias tm="tmux attach -t default || tmux new -s default"
+# Re-detect first so tmux picks up the current background on attach
+tm() {
+  _sync_term_color
+  tmux attach -t default || tmux new -s default
+}
 export TMUX_TMPDIR='/tmp'
 
 # =============================================================================
@@ -181,16 +204,20 @@ source ~/.sdkman/bin/sdkman-init.sh
 # THEME SWITCHING
 # =============================================================================
 
-# Function to switch between dark and light themes
+# Function to switch between dark and light themes (no argument: auto-detect)
 switch_theme() {
   local new_theme="$1"
+
+  if [[ -z "$new_theme" ]] && _sync_term_color; then
+    new_theme="$TERM_COLOR"
+  fi
 
   if [[ "$new_theme" != "dark" && "$new_theme" != "light" ]]; then
     echo "Usage: switch_theme [dark|light]"
     return 1
   fi
 
-  export TERM_COLOR="$new_theme"
+  _set_term_color "$new_theme"
 
   # Reload Zsh theme
   source ~/dotfiles/light-colors.zsh-theme
@@ -200,7 +227,7 @@ switch_theme() {
 
   # Update tmux if running in tmux
   if [[ -n "$TMUX" ]]; then
-    tmux source-file ~/.tmux.conf
+    tmux source-file ~/dotfiles/tmux-theme-${new_theme}.conf
   fi
 
   echo "Theme switched to: $new_theme"
