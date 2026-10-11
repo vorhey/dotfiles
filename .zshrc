@@ -22,9 +22,16 @@ _sync_term_color() {
   [[ -t 0 && -t 1 ]] || return 1
   detected="$(~/dotfiles/detect-theme.sh 2>/dev/null)" || return 1
   _set_term_color "$detected"
-  if [[ -n "$TMUX" && "$(tmux show -gqv @theme)" != "$detected" ]]; then
-    tmux source-file ~/dotfiles/tmux-theme-${detected}.conf
+  # tmux themes each client separately. With several clients on this session
+  # the query above is answered for just one of them, so only correct tmux
+  # when this session has a single client.
+  if [[ -n "$TMUX" ]]; then
+    local current="$(tmux display-message -p '#{session_attached} #{?#{E:@light},light,dark}')"
+    if [[ "$current" == "1 "* && "$current" != "1 $detected" ]]; then
+      ~/dotfiles/tmux-theme.sh "$detected"
+    fi
   fi
+  return 0
 }
 _sync_term_color
 
@@ -227,7 +234,7 @@ switch_theme() {
 
   # Update tmux if running in tmux
   if [[ -n "$TMUX" ]]; then
-    tmux source-file ~/dotfiles/tmux-theme-${new_theme}.conf
+    ~/dotfiles/tmux-theme.sh "$new_theme"
   fi
 
   echo "Theme switched to: $new_theme"
