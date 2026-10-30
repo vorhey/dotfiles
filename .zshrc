@@ -305,27 +305,43 @@ function current_dir() {
 }
 
 function change_tab_title() {
-  local title=$1
-  command nohup zellij action rename-tab $title >/dev/null 2>&1
+  [[ -n $ZELLIJ && -n $ZELLIJ_PANE_ID ]] || return 0
+  local title=$1 tab_id
+  # Target this shell's tab, even if a command finishes in a background tab.
+  tab_id=$(command zellij action list-panes --tab --json 2>/dev/null |
+    command jq -er --arg pane_id "$ZELLIJ_PANE_ID" \
+      '.[] | select(.is_plugin == false and (.id | tostring) == $pane_id) | .tab_id') || return 0
+  command zellij action rename-tab --tab-id "$tab_id" "$title" >/dev/null 2>&1
+}
+
+function zellij_process_title() {
+  local process=$1 title=$2 icon
+  icon=$(command bash "$HOME/dotfiles/get_process_icon.sh" "$process" 2>/dev/null)
+  icon=${icon#"${icon%%[![:space:]]*}"}
+  icon=${icon%"${icon##*[![:space:]]}"}
+  change_tab_title "${icon:+$icon }$title"
 }
 
 function set_tab_to_working_dir() {
-  local result=$?
-  local title=$(current_dir)
-  # uncomment the following to show the exit code after a failed command
-  # if [[ $result -gt 0 ]]; then
-  #     title="$title [$result]"
-  # fi
-
-  change_tab_title $title
+  zellij_process_title zsh "$(current_dir)"
 }
 
 function set_tab_to_command_line() {
-  local cmdline=$1
-  change_tab_title $cmdline
+  local -a words
+  words=(${(z)1})
+  # Skip environment assignments and shell command prefixes.
+  while (( $#words )) && [[ $words[1] =~ '^[[:alpha:]_][[:alnum:]_]*=' ||
+    $words[1] == (command|exec|noglob) ]]; do
+    shift words
+  done
+  (( $#words )) || return 0
+  local process=${(Q)words[1]}
+  process=${process:t}
+  zellij_process_title "$process" "$process"
 }
 
-if [[ -n $ZELLIJ ]]; then
+if [[ -n $ZELLIJ ]] && command -v zellij >/dev/null 2>&1; then
+  autoload -Uz add-zsh-hook
   add-zsh-hook precmd set_tab_to_working_dir
   add-zsh-hook preexec set_tab_to_command_line
 fi
