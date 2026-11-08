@@ -205,7 +205,7 @@ eval "$(zoxide init zsh)"
 
 # Source custom configurations
 source ~/dotfiles/.zsh_history_ignore
-source ~/.sdkman/bin/sdkman-init.sh
+[[ -s ~/.sdkman/bin/sdkman-init.sh ]] && source ~/.sdkman/bin/sdkman-init.sh
 
 # =============================================================================
 # THEME SWITCHING
