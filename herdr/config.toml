@@ -21,6 +21,9 @@ panel_bg = "reset"
 
 [ui]
 host_cursor = "native"
+hide_tab_bar_when_single_tab = true
+pane_gaps = true
+pane_borders = "always"
 
 [ui.sound]
 enabled = false
