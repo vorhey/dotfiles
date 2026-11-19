@@ -142,6 +142,9 @@ get_process_icon() {
     "copilot")
         echo " "
         ;;
+    "pi")
+        echo " π"
+        ;;
     "opencode")
         echo " 󰍳"
         ;;
