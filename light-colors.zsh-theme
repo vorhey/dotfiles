@@ -12,7 +12,7 @@ else
 fi
 
 # Main prompt arrow
-PROMPT="%(?:%{$fg_bold[$PRIMARY_COLOR]%}➜ :%{$fg_bold[$ERROR_COLOR]%}➜ )"
+PROMPT="%(?:%{$fg_bold[$PRIMARY_COLOR]%}❯:%{$fg_bold[$ERROR_COLOR]%}❯)"
 # Current directory
 PROMPT+=' %{$fg[$PRIMARY_COLOR]%}%c%{$reset_color%} $(git_prompt_info)'
 
